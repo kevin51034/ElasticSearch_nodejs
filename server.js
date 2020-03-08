@@ -8,6 +8,16 @@ const client = new elasticsearch.Client({
 
 'use strict'
 
+const app = express();
+
+app.use(express.json());
+app.use(express.urlencoded({
+    extended: false
+}));
+
+app.use(express.static('public'));
+
+
 const {
     Client
 } = require('@elastic/elasticsearch')
@@ -19,7 +29,7 @@ async function run() {
     // Let's start by indexing some data
     await client.index({
         index: 'game-of-thrones',
-         type: '_doc', // uncomment this line if you are using Elasticsearch ≤ 6
+         //type: '_doc', // uncomment this line if you are using Elasticsearch ≤ 6
         body: {
             character: 'Ned Stark',
             quote: 'Winter is coming.'
@@ -28,7 +38,7 @@ async function run() {
 
     await client.index({
         index: 'game-of-thrones',
-         type: '_doc', // uncomment this line if you are using Elasticsearch ≤ 6
+         //type: '_doc', // uncomment this line if you are using Elasticsearch ≤ 6
         body: {
             character: 'Daenerys Targaryen',
             quote: 'I am the blood of the dragon.'
@@ -37,7 +47,7 @@ async function run() {
 
     await client.index({
         index: 'game-of-thrones',
-         type: '_doc', // uncomment this line if you are using Elasticsearch ≤ 6
+         //type: '_doc', // uncomment this line if you are using Elasticsearch ≤ 6
         body: {
             character: 'Tyrion Lannister',
             quote: 'A mind needs books like a sword needs a whetstone.'
@@ -51,21 +61,34 @@ async function run() {
     })
 
     // Let's search!
-    const {
+    /*const {
         body
     } = await client.search({
-        index: 'game-of-thrones',
-         type: '_doc', // uncomment this line if you are using Elasticsearch ≤ 6
+        //index: 'game-of-thrones',
+        index: '.kibana_1',
+
+         //type: '_doc', // uncomment this line if you are using Elasticsearch ≤ 6
         body: {
             query: {
-                match: {
-                    quote: 'winter'
+                match_all: {
+                    //quote: 'winter'
                 }
             }
         }
+    })*/
+    const { body } = await client.get({
+        index: 'my-index',
+        id: '1'
     })
+    console.log(body)
 
-    console.log(body.hits.hits)
+    //console.log(body.hits.hits)
 }
 
 run().catch(console.log)
+
+const port = process.env.PORT || 3000;
+
+app.listen(port, function () {
+    console.log(`Server listening on port ${port}!`);
+});

@@ -1,0 +1,10 @@
+body {
+    text-align: center;
+}
+
+#searchBox {
+    margin: 0 auto;
+    margin-top: 25%;
+    width: 80%;
+    text-align:center;
+}
