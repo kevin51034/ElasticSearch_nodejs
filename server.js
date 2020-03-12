@@ -1,4 +1,13 @@
 const express = require('express');
+const cheerio = require('cheerio');
+const request = require('request');
+const fs = require('fs');
+//const writeStream = fs.createWriteStream('post.txt');
+
+
+// Write Header
+//writeStream.write('content');
+
 
 /*const elasticsearch = require('elasticsearch');
 const client = new elasticsearch.Client({
@@ -17,7 +26,53 @@ app.use(express.urlencoded({
 
 app.use(express.static('public'));
 
+const url = 'https://www.ptt.cc/bbs/index.html'
+//const url = 'https://www.ptt.cc/bbs/Gossiping/index.html'
+request({
+    url,
+    headers: {
+        Cookie: "over18=1;"
+    }
+}, (err, res, body) => {
+    //writeStream.write(`${body}`);
+    fs.writeFile('body.txt', `${body}`, function (err) {
+        if (err)
+            console.log(err);
+        else
+            console.log('Write operation complete.');
+    });
+    const $ = cheerio.load(body)
+    // select all link
+    let link = []
+    $('a').each(function (i, elem) {
+        link.push($(this).attr('href'));
+    })
+    console.log(link)
+    fs.writeFile('link.txt', `${link}`, function (err) {
+        if (err)
+            console.log(err);
+        else
+            console.log('Write operation complete.');
+    });
 
+    // select all text
+    let text = []
+    $('div').each(function (i, elem) {
+        text.push($(this).text());
+    })
+    //console.log(text)
+
+    fs.writeFile('text.txt', `${text}`, function (err) {
+        if (err)
+            console.log(err);
+        else
+            console.log('Write operation complete.');
+    });
+})
+
+
+
+/* Elastic Search
 const {
     Client
 } = require('@elastic/elasticsearch')
@@ -29,7 +84,7 @@ async function run() {
     // Let's start by indexing some data
     await client.index({
         index: 'game-of-thrones',
-         //type: '_doc', // uncomment this line if you are using Elasticsearch ≤ 6
+        //type: '_doc', // uncomment this line if you are using Elasticsearch ≤ 6
         body: {
             character: 'Ned Stark',
             quote: 'Winter is coming.'
@@ -38,7 +93,7 @@ async function run() {
 
     await client.index({
         index: 'game-of-thrones',
-         //type: '_doc', // uncomment this line if you are using Elasticsearch ≤ 6
+        //type: '_doc', // uncomment this line if you are using Elasticsearch ≤ 6
         body: {
             character: 'Daenerys Targaryen',
             quote: 'I am the blood of the dragon.'
@@ -47,7 +102,7 @@ async function run() {
 
     await client.index({
         index: 'game-of-thrones',
-         //type: '_doc', // uncomment this line if you are using Elasticsearch ≤ 6
+        //type: '_doc', // uncomment this line if you are using Elasticsearch ≤ 6
         body: {
             character: 'Tyrion Lannister',
             quote: 'A mind needs books like a sword needs a whetstone.'
@@ -61,31 +116,40 @@ async function run() {
     })
 
     // Let's search!
-    /*const {
+    const {
         body
     } = await client.search({
-        //index: 'game-of-thrones',
-        index: '.kibana_1',
-
-         //type: '_doc', // uncomment this line if you are using Elasticsearch ≤ 6
+        index: 'game-of-thrones',
         body: {
             query: {
-                match_all: {
-                    //quote: 'winter'
+                match: {
+                    quote: 'winter'
                 }
             }
         }
-    })*/
-    const { body } = await client.get({
+    })
+<<<<<<< HEAD
+    /*const {
+=======
+    const {
+>>>>>>> crawler link and content
+        body
+    } = await client.get({
         index: 'my-index',
         id: '1'
+<<<<<<< HEAD
+    })*/
+=======
     })
-    console.log(body)
+>>>>>>> crawler link and content
+    //console.log(body)
 
-    //console.log(body.hits.hits)
+    console.log(body.hits.hits)
 }
 
 run().catch(console.log)
+*/
+
 
 const port = process.env.PORT || 3000;
 
