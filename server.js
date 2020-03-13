@@ -128,20 +128,12 @@ async function run() {
             }
         }
     })
-<<<<<<< HEAD
-    /*const {
-=======
     const {
->>>>>>> crawler link and content
         body
     } = await client.get({
         index: 'my-index',
         id: '1'
-<<<<<<< HEAD
-    })*/
-=======
     })
->>>>>>> crawler link and content
     //console.log(body)
 
     console.log(body.hits.hits)
