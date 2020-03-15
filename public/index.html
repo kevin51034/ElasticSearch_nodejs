@@ -29,13 +29,15 @@
 
 
 <body>
-    <div class="input-group mb-3" id='searchBox'>
-        <input type="text" class="form-control" placeholder="Search..." aria-label="Recipient's username"
-            aria-describedby="button-addon2">
-        <div class="input-group-append">
-            <button class="btn btn-outline-secondary" type="button" id="button-addon2">Button</button>
+    <form id="searchForm">
+        <div class="input-group mb-3" id='searchBox'>
+            <input type="text" class="form-control" placeholder="Search..." aria-label="Recipient's username"
+                id="searchInput" name="searchInput" aria-describedby="button-addon2">
+            <div class="input-group-append">
+                <button class="btn btn-outline-secondary" type="submit" id='searchButton'>Button</button>
+            </div>
         </div>
-    </div>
+    </form>
 </body>
 
 </html>

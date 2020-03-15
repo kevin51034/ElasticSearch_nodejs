@@ -26,8 +26,8 @@ app.use(express.urlencoded({
 
 app.use(express.static('public'));
 
-const url = 'https://www.ptt.cc/bbs/index.html'
-//const url = 'https://www.ptt.cc/bbs/Gossiping/index.html'
+//const url = 'https://www.ptt.cc/bbs/index.html'
+/*const url = 'https://www.ptt.cc/bbs/Gossiping/index.html'
 request({
     url,
     headers: {
@@ -68,11 +68,12 @@ request({
         else
             console.log('Write operation complete.');
     });
-})
+})*/
 
 
 
-/* Elastic Search
+//Elastic Search
+
 const {
     Client
 } = require('@elastic/elasticsearch')
@@ -115,6 +116,7 @@ async function run() {
         index: 'game-of-thrones'
     })
 
+    /*
     // Let's search!
     const {
         body
@@ -133,14 +135,49 @@ async function run() {
     } = await client.get({
         index: 'my-index',
         id: '1'
-    })
+    })*/
     //console.log(body)
 
-    console.log(body.hits.hits)
+    //console.log(body.hits.hits)
 }
 
-run().catch(console.log)
-*/
+//run().catch(console.log)
+run();
+
+
+// search
+async function onSearch(req, res) {
+    console.log('onSearch');
+
+    const searchInput = req.body.searchInput;
+
+    //console.log(searchInput);
+
+    // Let's search!
+    const {
+        body
+    } = await client.search({
+        index: 'game-of-thrones',
+        body: {
+            query: {
+                match: {
+                    quote: `${searchInput}`
+                }
+            }
+        }
+    })
+    /*const {
+        body
+    } = await client.get({
+        index: 'my-index',
+        id: '1'
+    })*/
+    console.log(body.hits.hits)
+    //res.json(rows);
+}
+app.post('/api/search', onSearch);
+
+
 
 
 const port = process.env.PORT || 3000;
