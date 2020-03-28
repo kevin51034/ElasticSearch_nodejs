@@ -23,7 +23,5 @@ async function onSearch() {
 
 }
 
-
-
 const searchForm = document.querySelector('#searchForm');
 searchForm.addEventListener('submit', onSearch);

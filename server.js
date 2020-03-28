@@ -2,6 +2,8 @@ const express = require('express');
 const cheerio = require('cheerio');
 const request = require('request');
 const fs = require('fs');
+const md5 = require('md5');
+
 //const writeStream = fs.createWriteStream('post.txt');
 
 
@@ -26,14 +28,26 @@ app.use(express.urlencoded({
 
 app.use(express.static('public'));
 
-//const url = 'https://www.ptt.cc/bbs/index.html'
-/*const url = 'https://www.ptt.cc/bbs/Gossiping/index.html'
+const url = 'https://www.ptt.cc/bbs/index.html'
+//const url = 'https://www.ptt.cc/bbs/Gossiping/index.html'
+
 request({
     url,
     headers: {
         Cookie: "over18=1;"
     }
 }, (err, res, body) => {
+    const myURL = new URL(`${url}`);
+
+    console.log(myURL.origin);
+    console.log(myURL.href);
+    console.log(myURL.hostname);
+    console.log(myURL.host);
+    console.log(myURL.protocol);
+    const hostUrl = (myURL.protocol + '//' + myURL.host);
+    console.log(hostUrl);
+
+
     //writeStream.write(`${body}`);
     fs.writeFile('body.txt', `${body}`, function (err) {
         if (err)
@@ -42,13 +56,32 @@ request({
             console.log('Write operation complete.');
     });
     const $ = cheerio.load(body)
+
+    //console.log($.html());
+
     // select all link
-    let link = []
+    let link = [];
+    let linkmd5 = [];
     $('a').each(function (i, elem) {
-        link.push($(this).attr('href'));
+        if ($(this).attr('href')) {
+            link.push($(this).attr('href'));
+            thisurl = $(this).attr('href').startsWith('http') ? $(this).attr('href') : (hostUrl + $(this).attr('href'));
+            //console.log(thisurl);
+            link.push(thisurl);
+            //console.log(md5(thisurl));
+            linkmd5.push(md5(thisurl));
+        }
+
+
     })
     console.log(link)
     fs.writeFile('link.txt', `${link}`, function (err) {
+        if (err)
+            console.log(err);
+        else
+            console.log('Write operation complete.');
+    });
+    fs.writeFile('linkmd5.txt', `${linkmd5}`, function (err) {
         if (err)
             console.log(err);
         else
@@ -68,7 +101,7 @@ request({
         else
             console.log('Write operation complete.');
     });
-})*/
+})
 
 
 
@@ -81,6 +114,7 @@ const client = new Client({
     node: 'http://localhost:9200'
 })
 
+/*
 async function run() {
     // Let's start by indexing some data
     await client.index({
@@ -135,7 +169,7 @@ async function run() {
     } = await client.get({
         index: 'my-index',
         id: '1'
-    })*/
+    })
     //console.log(body)
 
     //console.log(body.hits.hits)
@@ -145,13 +179,12 @@ async function run() {
 run();
 
 
-// search
+
+// Search api
 async function onSearch(req, res) {
     console.log('onSearch');
 
     const searchInput = req.body.searchInput;
-
-    //console.log(searchInput);
 
     // Let's search!
     const {
@@ -166,18 +199,12 @@ async function onSearch(req, res) {
             }
         }
     })
-    /*const {
-        body
-    } = await client.get({
-        index: 'my-index',
-        id: '1'
-    })*/
+
     console.log(body.hits.hits)
-    //res.json(rows);
 }
 app.post('/api/search', onSearch);
 
-
+*/
 
 
 const port = process.env.PORT || 3000;
