@@ -6,20 +6,13 @@ const md5 = require('md5');
 
 var HashTable = require('./hashtable.js');
 
-//const writeStream = fs.createWriteStream('post.txt');
-
-
-// Write Header
-//writeStream.write('content');
-
-
 /*const elasticsearch = require('elasticsearch');
 const client = new elasticsearch.Client({
     host: 'local:9200',
     log: 'error'
 });*/
 
-'use strict'
+//'use strict'
 
 const app = express();
 
@@ -30,13 +23,9 @@ app.use(express.urlencoded({
 
 app.use(express.static('public'));
 
-const url = 'https://www.ptt.cc/bbs/index.html'
+const url = 'https://github.com/'
 //const url = 'https://www.ptt.cc/bbs/Gossiping/index.html'
 //const table = new Int32Array(100);
-//const table = [];
-//var table = new HashTable();
-
-//let seenhashTable = new HashTable();
 
 request({
     url,
@@ -70,6 +59,8 @@ request({
     let link = [];
     let linkmd5 = [];
     let hashKey = [];
+    const seenDBTable = [];
+
     $('a').each(function (i, elem) {
         if ($(this).attr('href')) {
             link.push($(this).attr('href'));
@@ -83,16 +74,14 @@ request({
             //console.log(djb2Hash(md5(thisurl)) % (64 * 256 * 2 - 1));
             //hashKeymod = djb2Hash(md5(thisurl)) % (64 * 256 * 2 - 1);
             //seenDB[hashKeymod] = md5(thisurl);
-            HashTable.put(md5(thisurl), thisurl);
+            HashTable.put(md5(thisurl), thisurl, seenDBTable);
 
         }
 
 
     })
-    console.log(link)
-    //console.log(table)
-    //seenhashTable.display();
-    //console.log(table.length)
+    //console.log(link)
+
     fs.writeFile('link.txt', `${link}`, function (err) {
         if (err)
             console.log(err);
@@ -111,7 +100,12 @@ request({
         else
             console.log('Write operation complete.');
     });
-    fs.writeFile('seenhashTable.txt', `${HashTable.table}`, function (err) {
+
+    var obj = {
+        table: seenDBTable
+    };
+    let outputObj = JSON.stringify(obj);
+    fs.writeFile('seenhashTable.json', `${outputObj}`, function (err) {
         if (err)
             console.log(err);
         else

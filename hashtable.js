@@ -1,5 +1,6 @@
-const table = [];
+//const table = [];
 let collisionCount = 0;
+
 function djb2HashCode(key) {
 
     // 初始化 hash 值，大部分實作使用 5381
@@ -12,15 +13,12 @@ function djb2HashCode(key) {
     return hash % 1013;
 }
 
-function put(key, value) {
+function put(key, value, table) {
     console.log(key)
     console.log(value)
     let position = djb2HashCode(key);
+    let seen = 0;
     // 若是位置沒被佔據直接 new 一個 ValuePair，若有則考慮下一個 index
-
-    //console.log(typeof table[position])
-    //console.log(table[position])
-
     if (table[position] === undefined) {
         console.log('insert')
         table[position] = {
@@ -28,30 +26,34 @@ function put(key, value) {
             value
         };
         console.log(position)
-        //console.log(table[position]);
     } else {
         console.log('collision')
         console.log(position)
         collisionCount++;
+        if (table[position].key === key) {
+            console.log('URL seen')
+            return;
+        }
         let index = ++position;
         while (table[index] !== undefined) {
+            if (table[index].key === key) {
+                console.log('URL seen')
+                return;
+            }
             index++;
         }
+        console.log('insert2')
         table[index] = {
             key,
             value
         };
-        //console.log(table[index]);
-
     }
-
 }
+
 
 module.exports = {
     djb2HashCode,
     put,
-    table,
-    collisionCount,
     //HashTable
 }
 
