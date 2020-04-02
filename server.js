@@ -31,39 +31,34 @@ const seenDBTable = [];
 
 //let count = 0;
 
-// TODO: need to check if there is link in the UDB first
-function crawler() {
+
+function main() {
+    
+    setTimeout(() => {
+        console.log('wait 5s');
+        batchCrawler();
+    }, 5000);
+    batchCrawler();
+}
+main();
+
+
+// batch process
+function batchCrawler() {
     for (let count = 0; link.length > 0 && count < 10; count++) {
-        console.log(count)
         let url = link[count];
-        console.log(link[0]);
-        //link.shift();
         console.log('while loop = ' + ' ' + `${count}`);
         console.log('link arrat -> ');
-        console.log(link[0]);
-        console.log(count);
-        console.log(link[count]);
-
-        console.log(url);
-
-        //console.log(link[++count]);
-        if(link[count]) {
-            dorequest(url,count)
+        if (link[count]) {
+            link.shift();
+            console.log('request : ' + `${url}`)
+            dorequest(url, count)
         }
-
-        //count++;
-        console.log('no wait')
-        setTimeout(() => {
-            console.log('wait 5s');
-        }, 5000);
-        //console.log(link.length)
-        //console.log(count)
     }
 }
 
-crawler();
 
-function dorequest(url,count) {
+function dorequest(url, count) {
     request({
         url,
         headers: {
@@ -74,9 +69,7 @@ function dorequest(url,count) {
         console.log('request number: ' + `${count}`)
 
         const myURL = new URL(`${url}`);
-        //console.log(myURL)
         const hostUrl = (myURL.protocol + '//' + myURL.host);
-        //console.log(hostUrl);
 
         fs.writeFile('body.txt', `${body}`, function (err) {
             if (err)
@@ -87,33 +80,18 @@ function dorequest(url,count) {
         const $ = cheerio.load(body)
 
         //console.log($.html());
-
-        // select all link
-        //   let link = [];
         let linkmd5 = [];
         let hashKey = [];
 
         $('a').each(function (i, elem) {
             if ($(this).attr('href')) {
-                link.push($(this).attr('href'));
+                //link.push($(this).attr('href'));
                 thisurl = $(this).attr('href').startsWith('http') ? $(this).attr('href') : (hostUrl + $(this).attr('href'));
-                //console.log(thisurl);
                 link.push(thisurl);
-                //console.log(md5(thisurl));
                 linkmd5.push(md5(thisurl));
-                //hashKey.push(djb2Hash(md5(thisurl)))
-                //console.log(djb2Hash(md5(thisurl)));
-                //console.log(djb2Hash(md5(thisurl)) % (64 * 256 * 2 - 1));
-                //hashKeymod = djb2Hash(md5(thisurl)) % (64 * 256 * 2 - 1);
-                //seenDB[hashKeymod] = md5(thisurl);
                 HashTable.put(md5(thisurl), thisurl, seenDBTable);
-
             }
-
-
         })
-        //console.log(link)
-
         fs.writeFile('link.txt', `${link}`, function (err) {
             if (err)
                 console.log(err);
