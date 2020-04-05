@@ -29,27 +29,35 @@ const url1 = 'https://github.com/'
 //const table = new Int32Array(100);
 const link = [url1];
 const seenDBTable = [];
-
+const successDB = [];
+let crawlercount = 0;
 //let count = 0;
 
 
-function main() {
-
-    setTimeout(() => {
-        console.log('wait 5s');
-        batchCrawler();
-    }, 5000);
-    batchCrawler();
+async function main() {
+    const delay = t => { // 先撰寫一個等待的 function
+        return new Promise(resolve => {
+            setTimeout(resolve, t);
+        });
+    };
+    for (let i = 0; i < 10; i++) {
+        console.log('await loop ' + `${i}`)
+        await batchCrawler();
+        await delay(3000);  
+    }
+    console.log(crawlercount);
+    //batchCrawler();
 }
 main();
 
 
 // batch process
-function batchCrawler() {
+async function batchCrawler() {
     for (let count = 0; link.length > 0 && count < 10; count++) {
         let url = link[count];
         console.log('while loop = ' + ' ' + `${count}`);
         console.log('link arrat -> ');
+        crawlercount++;
         if (link[count]) {
             link.shift();
             console.log('request : ' + `${url}`)
@@ -59,7 +67,7 @@ function batchCrawler() {
 }
 
 
-function dorequest(url, count) {
+async function dorequest(url, count) {
     request({
         url,
         headers: {
@@ -159,7 +167,18 @@ function dorequest(url, count) {
                     console.log('Write operation complete.');
             });
         }, 3000);
+        var objSuccess = {
 
+        };
+        successDB.push(myURL);
+        objSuccess['successURL'] = successDB;
+        let outputObjSuccess = JSON.stringify(objSuccess);
+        fs.writeFile('successDB.json', `${outputObjSuccess}`, function (err) {
+            if (err)
+                console.log(err);
+            else
+                console.log('Write operation complete.');
+        });
     })
 }
 
