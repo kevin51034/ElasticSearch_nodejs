@@ -21,19 +21,20 @@ function put(key, value, table) {
             key,
             value
         };
+        return 0;
         //console.log(position)
     } else {
         //console.log('collision')
         //console.log(position)
         if (table[position].key === key) {
             //console.log('URL seen')
-            return;
+            return 1;
         }
         let index = ++position;
         while (table[index] !== undefined) {
             if (table[index].key === key) {
                 //console.log('URL seen')
-                return;
+                return 1;
             }
             index++;
         }
@@ -42,6 +43,7 @@ function put(key, value, table) {
             key,
             value
         };
+        return 0;
     }
 }
 

@@ -25,7 +25,7 @@ app.use(express.urlencoded({
 app.use(express.static('public'));
 
 const url1 = 'https://github.com/'
-//const url = 'https://www.ptt.cc/bbs/Gossiping/index.html'
+//const url1 = 'https://www.ptt.cc/bbs/Gossiping/index.html'
 //const table = new Int32Array(100);
 const link = [url1];
 const seenDBTable = [];
@@ -41,9 +41,11 @@ async function main() {
         });
     };
     for (let i = 0; i < 10; i++) {
-        console.log('await loop ' + `${i}`)
+        //console.log('await loop ' + `${i}`)
         await batchCrawler();
         await delay(3000);  
+        //console.log('link -> ');
+        console.log(link);
     }
     console.log(crawlercount);
     //batchCrawler();
@@ -54,13 +56,12 @@ main();
 // batch process
 async function batchCrawler() {
     for (let count = 0; link.length > 0 && count < 10; count++) {
-        let url = link[count];
-        console.log('while loop = ' + ' ' + `${count}`);
-        console.log('link arrat -> ');
         crawlercount++;
         if (link[count]) {
+            let url = link[count];
             link.shift();
-            console.log('request : ' + `${url}`)
+            console.log('request number: ' + `${count}`)
+            //console.log('request : ' + `${url}`)
             dorequest(url, count)
         }
     }
@@ -75,7 +76,6 @@ async function dorequest(url, count) {
         }
     }, (err, res, body) => {
         console.log('Crawling  -> ' + `${url}`)
-        console.log('request number: ' + `${count}`)
 
         var objInfo = {};
 
@@ -99,8 +99,8 @@ async function dorequest(url, count) {
         fs.writeFile('body.txt', `${body}`, function (err) {
             if (err)
                 console.log(err);
-            else
-                console.log('Write operation complete.');
+            //else
+                //console.log('Write operation complete.');
         });
         const $ = cheerio.load(body)
         //console.log($.html());
@@ -111,22 +111,26 @@ async function dorequest(url, count) {
             if ($(this).attr('href')) {
                 //link.push($(this).attr('href'));
                 thisurl = $(this).attr('href').startsWith('http') ? $(this).attr('href') : (hostUrl + $(this).attr('href'));
-                link.push(thisurl);
-                linkmd5.push(md5(thisurl));
-                HashTable.put(md5(thisurl), thisurl, seenDBTable);
+                let seen = HashTable.put(md5(thisurl), thisurl, seenDBTable);
+                //console.log('seen ---> ' + `${seen}`);
+                if(seen === 0) {
+                    //console.log('push link')
+                    link.push(thisurl);
+                    linkmd5.push(md5(thisurl));
+                }
             }
         })
         fs.writeFile('udb.txt', `${link}`, function (err) {
             if (err)
                 console.log(err);
-            else
-                console.log('Write operation complete.');
+            //else
+                //console.log('Write operation complete.');
         });
         fs.writeFile('linkmd5.txt', `${linkmd5}`, function (err) {
             if (err)
                 console.log(err);
-            else
-                console.log('Write operation complete.');
+            //else
+                //console.log('Write operation complete.');
         });
 
         var obj = {
@@ -136,8 +140,8 @@ async function dorequest(url, count) {
         fs.writeFile('seenhashTable.json', `${outputObj}`, function (err) {
             if (err)
                 console.log(err);
-            else
-                console.log('Write operation complete.');
+            //else
+                //console.log('Write operation complete.');
         });
 
         // select all text
@@ -151,11 +155,11 @@ async function dorequest(url, count) {
         fs.writeFile('text.txt', `${text}`, function (err) {
             if (err)
                 console.log(err);
-            else
-                console.log('Write operation complete.');
+            //else
+                //console.log('Write operation complete.');
         });
 
-
+        /*
         // InfoDB output
         setTimeout(() => {
             console.log('wait 5s');
@@ -166,7 +170,7 @@ async function dorequest(url, count) {
                 else
                     console.log('Write operation complete.');
             });
-        }, 3000);
+        }, 3000);*/
         var objSuccess = {
 
         };
@@ -176,8 +180,8 @@ async function dorequest(url, count) {
         fs.writeFile('successDB.json', `${outputObjSuccess}`, function (err) {
             if (err)
                 console.log(err);
-            else
-                console.log('Write operation complete.');
+            //else
+                //console.log('Write operation complete.');
         });
     })
 }
