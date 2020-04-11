@@ -4,8 +4,18 @@ const request = require('request');
 const fs = require('fs');
 const md5 = require('md5');
 const dns = require('dns');
+const rp = require('request-promise');
 
 var HashTable = require('./hashtable.js');
+
+//Elastic Search
+
+const {
+    Client
+} = require('@elastic/elasticsearch')
+const client = new Client({
+    node: 'http://localhost:9200'
+})
 
 /*const elasticsearch = require('elasticsearch');
 const client = new elasticsearch.Client({
@@ -24,28 +34,36 @@ app.use(express.urlencoded({
 
 app.use(express.static('public'));
 
-const url1 = 'https://github.com/'
-//const url1 = 'https://www.ptt.cc/bbs/Gossiping/index.html'
+//const url1 = 'https://github.com/'
+//const url1 = 'https://news.google.com/topstories?hl=zh-TW&gl=TW&ceid=TW:zh-Hant';
+const url1 = 'https://www.ptt.cc/bbs'
 //const table = new Int32Array(100);
 const link = [url1];
 const seenDBTable = [];
 const successDB = [];
 let crawlercount = 0;
 //let count = 0;
-
+// robots-parser
 
 async function main() {
+    await batchCrawler();
     const delay = t => { // 先撰寫一個等待的 function
         return new Promise(resolve => {
             setTimeout(resolve, t);
         });
     };
+    console.log(link);
+    console.log('success URL number: ' + successDB.length);
     for (let i = 0; i < 10; i++) {
         //console.log('await loop ' + `${i}`)
         await batchCrawler();
-        await delay(3000);  
+        await delay(5000);
         //console.log('link -> ');
         console.log(link);
+        console.log('success URL number: ' + successDB.length);
+        await client.indices.refresh({
+            index: 'pageinfo'
+        })
     }
     console.log(crawlercount);
     //batchCrawler();
@@ -63,10 +81,13 @@ async function batchCrawler() {
             console.log('request number: ' + `${count}`)
             //console.log('request : ' + `${url}`)
             dorequest(url, count)
+            //promiseRequest(url);
+        } else {
+            return;
         }
     }
-}
 
+}
 
 async function dorequest(url, count) {
     request({
@@ -90,18 +111,19 @@ async function dorequest(url, count) {
             console.log('IP address: %j family: IPv%s', address, family);
             objInfo['IP address'] = address;
             // get domain name
-            dns.lookupService(`${address}`, 22, (err, hostname, service) => {
-                console.log(hostname, service);
-                objInfo['Domain name'] = hostname;
-            });
+            if (address) {
+                dns.lookupService(`${address}`, 22, (err, hostname, service) => {
+                    console.log(hostname, service);
+                    objInfo['Domain name'] = hostname;
+                });
+            }
+
         });
 
-        fs.writeFile('body.txt', `${body}`, function (err) {
-            if (err)
-                console.log(err);
-            //else
-                //console.log('Write operation complete.');
-        });
+
+        if (!body) {
+            return 0;
+        }
         const $ = cheerio.load(body)
         //console.log($.html());
         let linkmd5 = [];
@@ -113,27 +135,28 @@ async function dorequest(url, count) {
                 thisurl = $(this).attr('href').startsWith('http') ? $(this).attr('href') : (hostUrl + $(this).attr('href'));
                 let seen = HashTable.put(md5(thisurl), thisurl, seenDBTable);
                 //console.log('seen ---> ' + `${seen}`);
-                if(seen === 0) {
+                if (seen === 0) {
                     //console.log('push link')
                     link.push(thisurl);
                     linkmd5.push(md5(thisurl));
                 }
             }
         })
+        /*
         fs.writeFile('udb.txt', `${link}`, function (err) {
             if (err)
                 console.log(err);
             //else
-                //console.log('Write operation complete.');
+            //console.log('Write operation complete.');
         });
         fs.writeFile('linkmd5.txt', `${linkmd5}`, function (err) {
             if (err)
                 console.log(err);
             //else
-                //console.log('Write operation complete.');
-        });
+            //console.log('Write operation complete.');
+        });*/
 
-        var obj = {
+        /*var obj = {
             table: seenDBTable
         };
         let outputObj = JSON.stringify(obj);
@@ -141,8 +164,8 @@ async function dorequest(url, count) {
             if (err)
                 console.log(err);
             //else
-                //console.log('Write operation complete.');
-        });
+            //console.log('Write operation complete.');
+        });*/
 
         // select all text
         let text = []
@@ -152,12 +175,19 @@ async function dorequest(url, count) {
         //console.log(text)
         //objInfo['text body'] = text;
 
+        /*
         fs.writeFile('text.txt', `${text}`, function (err) {
             if (err)
                 console.log(err);
             //else
-                //console.log('Write operation complete.');
+            //console.log('Write operation complete.');
         });
+        fs.writeFile('body.txt', `${body}`, function (err) {
+            if (err)
+                console.log(err);
+            //else
+            //console.log('Write operation complete.');
+        });*/
 
         /*
         // InfoDB output
@@ -175,26 +205,35 @@ async function dorequest(url, count) {
 
         };
         successDB.push(myURL);
-        objSuccess['successURL'] = successDB;
+        
+        /*objSuccess['successURL'] = successDB;
         let outputObjSuccess = JSON.stringify(objSuccess);
         fs.writeFile('successDB.json', `${outputObjSuccess}`, function (err) {
             if (err)
                 console.log(err);
             //else
-                //console.log('Write operation complete.');
-        });
+            //console.log('Write operation complete.');
+        });*/
+        //console.log('successDB -> ')
+        //console.log(successDB);
+
+        storePageInfo(myURL,text)
+
+    })
+
+}
+
+async function storePageInfo(myURL,text) {
+    await client.index({
+        index: 'pageinfo',
+        //type: '_doc', // uncomment this line if you are using Elasticsearch ≤ 6
+        body: {
+            URL: `${myURL}`,
+            text: `${text}`
+        }
     })
 }
 
-
-//Elastic Search
-
-const {
-    Client
-} = require('@elastic/elasticsearch')
-const client = new Client({
-    node: 'http://localhost:9200'
-})
 
 /*
 async function run() {
@@ -260,7 +299,7 @@ async function run() {
 //run().catch(console.log)
 run();
 
-
+*/
 
 // Search api
 async function onSearch(req, res) {
@@ -272,11 +311,11 @@ async function onSearch(req, res) {
     const {
         body
     } = await client.search({
-        index: 'game-of-thrones',
+        index: 'pageinfo',
         body: {
             query: {
                 match: {
-                    quote: `${searchInput}`
+                    text: `${searchInput}`
                 }
             }
         }
@@ -286,7 +325,7 @@ async function onSearch(req, res) {
 }
 app.post('/api/search', onSearch);
 
-*/
+
 
 
 const port = process.env.PORT || 3000;
