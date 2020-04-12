@@ -7,6 +7,7 @@ const dns = require('dns');
 const rp = require('request-promise');
 
 var HashTable = require('./hashtable.js');
+var moment = require('moment');
 
 //Elastic Search
 
@@ -37,6 +38,7 @@ app.use(express.static('public'));
 //const url1 = 'https://github.com/'
 //const url1 = 'https://news.google.com/topstories?hl=zh-TW&gl=TW&ceid=TW:zh-Hant';
 const url1 = 'https://www.ptt.cc/bbs'
+//const url1 = 'https://www.ptt.cc/bbs/Gossiping/index.html'
 //const table = new Int32Array(100);
 const link = [url1];
 const seenDBTable = [];
@@ -46,6 +48,8 @@ let crawlercount = 0;
 // robots-parser
 
 async function main() {
+    var startTime = moment().format("dddd, MMMM Do YYYY, h:mm:ss a");
+    console.log(startTime);
     await batchCrawler();
     const delay = t => { // 先撰寫一個等待的 function
         return new Promise(resolve => {
@@ -54,16 +58,19 @@ async function main() {
     };
     console.log(link);
     console.log('success URL number: ' + successDB.length);
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 1000; i++) {
         //console.log('await loop ' + `${i}`)
         await batchCrawler();
-        await delay(5000);
+        await delay(15000);
         //console.log('link -> ');
         console.log(link);
         console.log('success URL number: ' + successDB.length);
         await client.indices.refresh({
             index: 'pageinfo'
         })
+        var batchTime = moment().format("dddd, MMMM Do YYYY, h:mm:ss a");
+        console.log('batch time : ')
+        console.log(batchTime)
     }
     console.log(crawlercount);
     //batchCrawler();
@@ -73,12 +80,12 @@ main();
 
 // batch process
 async function batchCrawler() {
-    for (let count = 0; link.length > 0 && count < 10; count++) {
+    for (let count = 0; link.length > 0 && count < 100; count++) {
         crawlercount++;
         if (link[count]) {
             let url = link[count];
             link.shift();
-            console.log('request number: ' + `${count}`)
+            //console.log('request number: ' + `${count}`)
             //console.log('request : ' + `${url}`)
             dorequest(url, count)
             //promiseRequest(url);
@@ -89,7 +96,7 @@ async function batchCrawler() {
 
 }
 
-async function dorequest(url, count) {
+async function dorequest(url) {
     request({
         url,
         headers: {
@@ -97,6 +104,12 @@ async function dorequest(url, count) {
         }
     }, (err, res, body) => {
         console.log('Crawling  -> ' + `${url}`)
+        if (err) {
+            return
+        }
+        if(res.statusCode !== 200) {
+            return
+        }
 
         var objInfo = {};
 
@@ -108,12 +121,12 @@ async function dorequest(url, count) {
 
         // get IP address
         dns.lookup(`${myURL.hostname}`, (err, address, family) => {
-            console.log('IP address: %j family: IPv%s', address, family);
+            //console.log('IP address: %j family: IPv%s', address, family);
             objInfo['IP address'] = address;
             // get domain name
             if (address) {
                 dns.lookupService(`${address}`, 22, (err, hostname, service) => {
-                    console.log(hostname, service);
+                    //console.log(hostname, service);
                     objInfo['Domain name'] = hostname;
                 });
             }
@@ -127,6 +140,8 @@ async function dorequest(url, count) {
         const $ = cheerio.load(body)
         //console.log($.html());
         let linkmd5 = [];
+        let pageTitle = $("title").text();
+
         //let hashKey = [];
 
         $('a').each(function (i, elem) {
@@ -168,13 +183,27 @@ async function dorequest(url, count) {
         });*/
 
         // select all text
-        let text = []
-        $('div').each(function (i, elem) {
-            text.push($(this).text());
+        let text = [];
+        $('div').map(function (i, elem) {
+                text.push($(this).text().replace(/^\s+|\s+$/gm, ''));
         })
+
+
         //console.log(text)
         //objInfo['text body'] = text;
 
+
+        // ptt main content
+        /*let text = '';
+        $('#main-content').map(function (i, elem) {
+            if($(this).text().length > text.length) {
+                console.log('change text')
+                console.log($(this).text().trim())
+                text = $(this).text()
+                //text.push($(this).text());
+
+            }
+        })*/
         /*
         fs.writeFile('text.txt', `${text}`, function (err) {
             if (err)
@@ -217,18 +246,19 @@ async function dorequest(url, count) {
         //console.log('successDB -> ')
         //console.log(successDB);
 
-        storePageInfo(myURL,text)
+        storePageInfo(myURL,pageTitle,text)
 
     })
 
 }
 
-async function storePageInfo(myURL,text) {
+async function storePageInfo(myURL,pageTitle,text) {
     await client.index({
         index: 'pageinfo',
         //type: '_doc', // uncomment this line if you are using Elasticsearch ≤ 6
         body: {
             URL: `${myURL}`,
+            title: `${pageTitle}`,
             text: `${text}`
         }
     })
@@ -312,16 +342,27 @@ async function onSearch(req, res) {
         body
     } = await client.search({
         index: 'pageinfo',
+        size: 100,
         body: {
             query: {
                 match: {
+                    //title: `${searchInput}`,
                     text: `${searchInput}`
                 }
             }
         }
     })
+    if(body.hits.hits.length > 0) {
+        console.log(body.hits.hits.length)
+        for(let i=0;i<body.hits.hits.length;i++){
+            console.log(body.hits.hits[i]._source.URL)
+            console.log(body.hits.hits[i]._source.title)
+            //console.log(body.hits.hits[i]._source.text)
+        }
+    }
+    res.json(body.hits.hits);
+    //res = body.hits.hits;
 
-    console.log(body.hits.hits)
 }
 app.post('/api/search', onSearch);
 
