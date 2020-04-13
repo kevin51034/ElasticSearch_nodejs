@@ -40,10 +40,11 @@ app.use(express.static('public'));
 //const url1 = 'https://www.ptt.cc/bbs'
 const url1 = 'https://www.ptt.cc/bbs/Gossiping/index.html'
 //const table = new Int32Array(100);
-const link = [url1];
+const link = [[url1, 0]];
 const seenDBTable = [];
 const successDB = [];
 let crawlercount = 0;
+const pageInfoDB = [];
 //let count = 0;
 // robots-parser
 
@@ -71,11 +72,20 @@ async function main() {
         var batchTime = moment().format("dddd, MMMM Do YYYY, h:mm:ss a");
         console.log('batch time : ')
         console.log(batchTime)
+
+        let outputInfoDB = JSON.stringify(pageInfoDB);
+        fs.writeFile(`./pageInfoDB.json`, `${outputInfoDB}`, function (err) {
+            if (err)
+                console.log(err);
+            else
+                console.log('Write operation complete.');
+        });
+        console.log(outputInfoDB)
     }
     console.log(crawlercount);
     //batchCrawler();
 }
-//main();
+main();
 
 
 // batch process
@@ -84,12 +94,14 @@ async function batchCrawler() {
         crawlercount++;
         if (link[count]) {
             let url = link[count][0];
-            //let depth = link[count][1];
+            let depth = ++link[count][1];
+            //console.log(depth)
             link.shift();
-            //console.log('request number: ' + `${count}`)
-            //console.log('request : ' + `${url}`)
-            dorequest(url, count)
-            //promiseRequest(url);
+            if(depth > 5){
+                console.log('page depth > 5: return')
+                continue;
+            }
+            dorequest(url, depth)
         } else {
             return;
         }
@@ -97,7 +109,7 @@ async function batchCrawler() {
 
 }
 
-async function dorequest(url) {
+async function dorequest(url, depth) {
     request({
         url,
         headers: {
@@ -112,12 +124,17 @@ async function dorequest(url) {
             return
         }
 
+        // page Info
         var objInfo = {};
 
         const myURL = new URL(`${url}`);
         const hostUrl = (myURL.protocol + '//' + myURL.host);
         objInfo['URL'] = myURL;
         objInfo['hostUrl'] = hostUrl;
+        objInfo['crawl time'] = moment().format("dddd, MMMM Do YYYY, h:mm:ss a");
+        objInfo['page depth'] = depth;
+        objInfo['request status code'] = res.statusCode;
+
         //objInfo['raw body'] = body;
 
         // get IP address
@@ -142,6 +159,7 @@ async function dorequest(url) {
         //console.log($.html());
         let linkmd5 = [];
         let pageTitle = $("title").text();
+        objInfo['page Title'] = pageTitle;
 
         //let hashKey = [];
 
@@ -153,18 +171,18 @@ async function dorequest(url) {
                 //console.log('seen ---> ' + `${seen}`);
                 if (seen === 0) {
                     //console.log('push link')
-                    link.push(thisurl);
+                    link.push([thisurl, depth]);
                     linkmd5.push(md5(thisurl));
                 }
             }
         })
-        /*
+        
         fs.writeFile('udb.txt', `${link}`, function (err) {
             if (err)
                 console.log(err);
             //else
             //console.log('Write operation complete.');
-        });
+        });/*
         fs.writeFile('linkmd5.txt', `${linkmd5}`, function (err) {
             if (err)
                 console.log(err);
@@ -246,6 +264,8 @@ async function dorequest(url) {
         });*/
         //console.log('successDB -> ')
         //console.log(successDB);
+
+        pageInfoDB.push(objInfo)
 
         storePageInfo(myURL,pageTitle,text)
 
