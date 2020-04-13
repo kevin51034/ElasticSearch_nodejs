@@ -36,9 +36,9 @@ app.use(express.urlencoded({
 app.use(express.static('public'));
 
 //const url1 = 'https://github.com/'
-//const url1 = 'https://news.google.com/topstories?hl=zh-TW&gl=TW&ceid=TW:zh-Hant';
-const url1 = 'https://www.ptt.cc/bbs'
-//const url1 = 'https://www.ptt.cc/bbs/Gossiping/index.html'
+//const url1 = 'https://www.ettoday.net/';
+//const url1 = 'https://www.ptt.cc/bbs'
+const url1 = 'https://www.ptt.cc/bbs/Gossiping/index.html'
 //const table = new Int32Array(100);
 const link = [url1];
 const seenDBTable = [];
@@ -58,10 +58,10 @@ async function main() {
     };
     console.log(link);
     console.log('success URL number: ' + successDB.length);
-    for (let i = 0; i < 1000; i++) {
+    for (let i = 0; i < 100; i++) {
         //console.log('await loop ' + `${i}`)
         await batchCrawler();
-        await delay(15000);
+        await delay(10000);
         //console.log('link -> ');
         console.log(link);
         console.log('success URL number: ' + successDB.length);
@@ -75,7 +75,7 @@ async function main() {
     console.log(crawlercount);
     //batchCrawler();
 }
-main();
+//main();
 
 
 // batch process
@@ -83,7 +83,8 @@ async function batchCrawler() {
     for (let count = 0; link.length > 0 && count < 100; count++) {
         crawlercount++;
         if (link[count]) {
-            let url = link[count];
+            let url = link[count][0];
+            //let depth = link[count][1];
             link.shift();
             //console.log('request number: ' + `${count}`)
             //console.log('request : ' + `${url}`)
@@ -183,10 +184,10 @@ async function dorequest(url) {
         });*/
 
         // select all text
-        let text = [];
+        /*let text = [];
         $('div').map(function (i, elem) {
                 text.push($(this).text().replace(/^\s+|\s+$/gm, ''));
-        })
+        })*/
 
 
         //console.log(text)
@@ -194,16 +195,16 @@ async function dorequest(url) {
 
 
         // ptt main content
-        /*let text = '';
+        let text = '';
         $('#main-content').map(function (i, elem) {
             if($(this).text().length > text.length) {
-                console.log('change text')
-                console.log($(this).text().trim())
-                text = $(this).text()
+                //console.log('change text')
+                //console.log($(this).text().trim())
+                text = $(this).text().replace(/^\s+|\s+$/gm, '')
                 //text.push($(this).text());
 
             }
-        })*/
+        })
         /*
         fs.writeFile('text.txt', `${text}`, function (err) {
             if (err)
@@ -342,7 +343,7 @@ async function onSearch(req, res) {
         body
     } = await client.search({
         index: 'pageinfo',
-        size: 100,
+        size: 200,
         body: {
             query: {
                 match: {
@@ -351,7 +352,11 @@ async function onSearch(req, res) {
                 }
             }
         }
+    }, {
+        ignore: [404],
+        maxRetries: 3
     })
+
     if(body.hits.hits.length > 0) {
         console.log(body.hits.hits.length)
         for(let i=0;i<body.hits.hits.length;i++){
