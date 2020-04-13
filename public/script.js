@@ -65,19 +65,40 @@ function showResult(resultJson, searchInputValue) {
         hnode.classList.add('mb-1')
         pnode.classList.add('mb-1')
 
-        hnode.textContent = `${resultJson[i]._source.title}`
+        titletext = `${resultJson[i]._source.title}`
+
+        var titleIndex = titletext.indexOf(searchInputValue);
+
+        if(titleIndex >= 0) {
+            hnode.innerHTML = titletext.substring(0, titleIndex) + "<span class='highlight'>" + titletext.substring(titleIndex,titleIndex+searchInputValue.length) + "</span>" + titletext.substring(titleIndex + searchInputValue.length);
+            //displaytext = displaytext.substring(0,200);
+        } else {
+            hnode.innerHTML = titletext;
+        }
+
+
+
         anode.appendChild(divnode);
         anode.href = `${resultJson[i]._source.URL}`;
         displaytext = `${resultJson[i]._source.text}`;
-        if(displaytext.length > 200) {
-            displaytext = displaytext.substring(0,200);
+
+
+        //let searchInputValueSplit = searchInputValue.split(' ');
+
+        var index = displaytext.indexOf(searchInputValue);
+        if(index>=0) {
+            pnode.innerHTML = displaytext.substring(index-100, index) + "<span class='highlight'>" + displaytext.substring(index,index+searchInputValue.length) + "</span>" + displaytext.substring(index + searchInputValue.length, index+100);
+            //console.log(pnode)
+            //displaytext = displaytext.substring(0,200);
+        } else {
+            pnode.innerHTML = displaytext.substring(0,200);
         }
 
         //var highlightnode = document.createElement('span'); //create a <a> tag
         //highlightnode.classList.add('highlight')
 
-
-        /*while(displaytext.indexOf(searchInputValue)) {
+/*
+        while(displaytext.indexOf(searchInputValue)) {
             var index = displaytext.indexOf(searchInputValue);
             if (index >= 0) { 
                 //highlightnode.textContent = displaytext.substring(index,index+searchInputValue.length)
@@ -88,7 +109,7 @@ function showResult(resultJson, searchInputValue) {
         }*/
 
 
-        pnode.textContent = displaytext
+        //pnode.textContent = displaytext
         divnode.appendChild(hnode);
         divnode.after(pnode);
 

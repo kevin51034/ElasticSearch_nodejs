@@ -39,13 +39,11 @@ app.use(express.static('public'));
 //const url1 = 'https://www.ettoday.net/';
 //const url1 = 'https://www.ptt.cc/bbs'
 const url1 = 'https://www.ptt.cc/bbs/Gossiping/index.html'
-//const table = new Int32Array(100);
 const link = [[url1, 0]];
 const seenDBTable = [];
 const successDB = [];
 let crawlercount = 0;
 const pageInfoDB = [];
-//let count = 0;
 // robots-parser
 
 async function main() {
@@ -60,7 +58,6 @@ async function main() {
     console.log(link);
     console.log('success URL number: ' + successDB.length);
     for (let i = 0; i < 100; i++) {
-        //console.log('await loop ' + `${i}`)
         await batchCrawler();
         await delay(10000);
         //console.log('link -> ');
@@ -90,7 +87,7 @@ main();
 
 // batch process
 async function batchCrawler() {
-    for (let count = 0; link.length > 0 && count < 100; count++) {
+    for (let count = 0; link.length > 0 && count < 1000; count++) {
         crawlercount++;
         if (link[count]) {
             let url = link[count][0];
@@ -168,7 +165,6 @@ async function dorequest(url, depth) {
                 //link.push($(this).attr('href'));
                 thisurl = $(this).attr('href').startsWith('http') ? $(this).attr('href') : (hostUrl + $(this).attr('href'));
                 let seen = HashTable.put(md5(thisurl), thisurl, seenDBTable);
-                //console.log('seen ---> ' + `${seen}`);
                 if (seen === 0) {
                     //console.log('push link')
                     link.push([thisurl, depth]);
@@ -276,7 +272,6 @@ async function dorequest(url, depth) {
 async function storePageInfo(myURL,pageTitle,text) {
     await client.index({
         index: 'pageinfo',
-        //type: '_doc', // uncomment this line if you are using Elasticsearch ≤ 6
         body: {
             URL: `${myURL}`,
             title: `${pageTitle}`,
