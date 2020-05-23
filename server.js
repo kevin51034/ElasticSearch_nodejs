@@ -39,17 +39,61 @@ app.use(express.static('public'));
 //const url1 = 'https://www.ettoday.net/';
 //const url1 = 'https://www.ptt.cc/bbs'
 const url1 = 'https://www.ptt.cc/bbs/Gossiping/index.html'
-const link = [[url1, 0]];
+const link = [
+    [url1, 0]
+];
 const seenDBTable = [];
 const successDB = [];
 let crawlercount = 0;
-const pageInfoDB = [];
+//const pageInfoDB = [];
+let bulkBody = [];
 // robots-parser
 
 async function main() {
-    var startTime = moment().format("dddd, MMMM Do YYYY, h:mm:ss a");
+
+    await client.indices.create({
+        index: 'pageinfo',
+        body: {
+            mappings: {
+                properties: {
+                    crawlTime: {
+                        type: 'date'
+                    },
+                    siteURL: {
+                        type: 'text'
+                    },
+                    hostURL: {
+                        type: 'text'
+                    },
+                    ip: {
+                        type: 'text'
+                    },
+                    domain: {
+                        type: 'text'
+                    },
+                    statusCode: {
+                        type: 'integer'
+                    },
+                    pageDepth: {
+                        type: 'integer'
+                    },
+                    pageTitle: {
+                        type: 'text'
+                    },
+                    mainText: {
+                        type: 'text'
+                    },
+                }
+            }
+        }
+    }, {
+        ignore: [400]
+    })
+
+
+    var startTime = moment().format();
     console.log(startTime);
-    await batchCrawler();
+    batchCrawler();
     const delay = t => { // 先撰寫一個等待的 function
         return new Promise(resolve => {
             setTimeout(resolve, t);
@@ -58,26 +102,34 @@ async function main() {
     console.log(link);
     console.log('success URL number: ' + successDB.length);
     for (let i = 0; i < 100; i++) {
-        await batchCrawler();
+        batchCrawler();
         await delay(10000);
         //console.log('link -> ');
-        console.log(link);
+        //console.log(link);
         console.log('success URL number: ' + successDB.length);
         await client.indices.refresh({
             index: 'pageinfo'
         })
-        var batchTime = moment().format("dddd, MMMM Do YYYY, h:mm:ss a");
+        var batchTime = moment().format();
         console.log('batch time : ')
         console.log(batchTime)
-
+        //console.log(seenDBTable);
+        /*
         let outputInfoDB = JSON.stringify(pageInfoDB);
         fs.writeFile(`./pageInfoDB.json`, `${outputInfoDB}`, function (err) {
             if (err)
                 console.log(err);
             else
                 console.log('Write operation complete.');
-        });
-        console.log(outputInfoDB)
+        });*/
+
+
+        //console.log(outputInfoDB)
+        //console.log(bulkBody)
+
+        storePageInfoBulk(bulkBody);
+
+        bulkBody = []
     }
     console.log(crawlercount);
     //batchCrawler();
@@ -87,15 +139,15 @@ main();
 
 // batch process
 async function batchCrawler() {
-    for (let count = 0; link.length > 0 && count < 1000; count++) {
+    for (let count = 0; link.length > 0 && count < 150; count++) {
         crawlercount++;
         if (link[count]) {
             let url = link[count][0];
             let depth = ++link[count][1];
             //console.log(depth)
             link.shift();
-            if(depth > 5){
-                console.log('page depth > 5: return')
+            if (depth > 15) {
+                console.log('page depth > 15: return')
                 continue;
             }
             dorequest(url, depth)
@@ -113,11 +165,11 @@ async function dorequest(url, depth) {
             Cookie: "over18=1;"
         }
     }, (err, res, body) => {
-        console.log('Crawling  -> ' + `${url}`)
+        //console.log('Crawling  -> ' + `${url}`)
         if (err) {
             return
         }
-        if(res.statusCode !== 200) {
+        if (res.statusCode !== 200) {
             return
         }
 
@@ -126,23 +178,23 @@ async function dorequest(url, depth) {
 
         const myURL = new URL(`${url}`);
         const hostUrl = (myURL.protocol + '//' + myURL.host);
-        objInfo['URL'] = myURL;
-        objInfo['hostUrl'] = hostUrl;
-        objInfo['crawl time'] = moment().format("dddd, MMMM Do YYYY, h:mm:ss a");
-        objInfo['page depth'] = depth;
-        objInfo['request status code'] = res.statusCode;
+        objInfo['siteURL'] = myURL;
+        objInfo['hostURL'] = hostUrl;
+        objInfo['crawlTime'] = moment().format();
+        objInfo['pageDepth'] = depth;
+        objInfo['statusCode'] = res.statusCode;
 
         //objInfo['raw body'] = body;
 
         // get IP address
         dns.lookup(`${myURL.hostname}`, (err, address, family) => {
             //console.log('IP address: %j family: IPv%s', address, family);
-            objInfo['IP address'] = address;
+            objInfo['ip'] = address;
             // get domain name
             if (address) {
                 dns.lookupService(`${address}`, 22, (err, hostname, service) => {
                     //console.log(hostname, service);
-                    objInfo['Domain name'] = hostname;
+                    objInfo['domain'] = hostname;
                 });
             }
 
@@ -156,7 +208,7 @@ async function dorequest(url, depth) {
         //console.log($.html());
         let linkmd5 = [];
         let pageTitle = $("title").text();
-        objInfo['page Title'] = pageTitle;
+        objInfo['pageTitle'] = pageTitle;
 
         //let hashKey = [];
 
@@ -164,7 +216,9 @@ async function dorequest(url, depth) {
             if ($(this).attr('href')) {
                 //link.push($(this).attr('href'));
                 thisurl = $(this).attr('href').startsWith('http') ? $(this).attr('href') : (hostUrl + $(this).attr('href'));
-                let seen = HashTable.put(md5(thisurl), thisurl, seenDBTable);
+                //let seen = HashTable.put(md5(thisurl), thisurl, seenDBTable);
+                let seen = HashTable.put(md5(thisurl), seenDBTable);
+
                 if (seen === 0) {
                     //console.log('push link')
                     link.push([thisurl, depth]);
@@ -172,21 +226,24 @@ async function dorequest(url, depth) {
                 }
             }
         })
-        
+
+        /*
         fs.writeFile('udb.txt', `${link}`, function (err) {
             if (err)
                 console.log(err);
             //else
             //console.log('Write operation complete.');
-        });/*
-        fs.writeFile('linkmd5.txt', `${linkmd5}`, function (err) {
-            if (err)
-                console.log(err);
-            //else
-            //console.log('Write operation complete.');
-        });*/
+        });
+        
+                fs.writeFile('linkmd5.txt', `${linkmd5}`, function (err) {
+                    if (err)
+                        console.log(err);
+                    //else
+                    //console.log('Write operation complete.');
+                });*/
 
-        /*var obj = {
+        /* seenDBTable
+        var obj = {
             table: seenDBTable
         };
         let outputObj = JSON.stringify(obj);
@@ -197,28 +254,39 @@ async function dorequest(url, depth) {
             //console.log('Write operation complete.');
         });*/
 
-        // select all text
-        /*let text = [];
-        $('div').map(function (i, elem) {
-                text.push($(this).text().replace(/^\s+|\s+$/gm, ''));
-        })*/
+
 
 
         //console.log(text)
         //objInfo['text body'] = text;
 
+        if (objInfo['hostURL'] == 'https://www.ptt.cc' && $('#main-content')) {
+            // ptt main content
+            //console.log('main1')
+            let text = '';
+            $('#main-content').map(function (i, elem) {
+                if ($(this).text().length > text.length) {
+                    //console.log('change text')
+                    //console.log($(this).text().trim())
+                    text = $(this).text().replace(/^\s+|\s+$/gm, '')
+                    //text.push($(this).text());
 
-        // ptt main content
-        let text = '';
-        $('#main-content').map(function (i, elem) {
-            if($(this).text().length > text.length) {
-                //console.log('change text')
-                //console.log($(this).text().trim())
-                text = $(this).text().replace(/^\s+|\s+$/gm, '')
-                //text.push($(this).text());
+                }
+            })
+            objInfo['mainText'] = text;
+        } else {
+            //console.log('main2')
 
-            }
-        })
+            // select all text
+            let text = [];
+            $('div').map(function (i, elem) {
+                    text.push($(this).text().replace(/^\s+|\s+$/gm, ''));
+            })
+            objInfo['mainText'] = text;
+        }
+
+
+
         /*
         fs.writeFile('text.txt', `${text}`, function (err) {
             if (err)
@@ -245,11 +313,9 @@ async function dorequest(url, depth) {
                     console.log('Write operation complete.');
             });
         }, 3000);*/
-        var objSuccess = {
 
-        };
         successDB.push(myURL);
-        
+
         /*objSuccess['successURL'] = successDB;
         let outputObjSuccess = JSON.stringify(objSuccess);
         fs.writeFile('successDB.json', `${outputObjSuccess}`, function (err) {
@@ -261,91 +327,80 @@ async function dorequest(url, depth) {
         //console.log('successDB -> ')
         //console.log(successDB);
 
-        pageInfoDB.push(objInfo)
 
-        storePageInfo(myURL,pageTitle,text)
+
+        //console.log(objInfo['mainText'])
+        //pageInfoDB.push(objInfo)
+        bulkBody.push(objInfo)
+
+        //storePageInfo(objInfo)
 
     })
 
 }
 
-async function storePageInfo(myURL,pageTitle,text) {
+async function storePageInfo(objInfo) {
     await client.index({
         index: 'pageinfo',
         body: {
-            URL: `${myURL}`,
-            title: `${pageTitle}`,
-            text: `${text}`
+            crawlTime: `${objInfo['crawlTime']}`,
+            URL: `${objInfo['siteURL']}`,
+            hostURL: `${objInfo['hostURL']}`,
+            ip: `${objInfo['ip']}`,
+            domain: `${objInfo['domain']}`,
+            statusCode: `${objInfo['statusCode']}`,
+            pageDepth: `${objInfo['pageDepth']}`,
+            title: `${objInfo['pageTitle']}`,
+            mainText: `${objInfo['mainText']}`
         }
     })
 }
 
 
-/*
-async function run() {
-    // Let's start by indexing some data
-    await client.index({
-        index: 'game-of-thrones',
-        //type: '_doc', // uncomment this line if you are using Elasticsearch ≤ 6
-        body: {
-            character: 'Ned Stark',
-            quote: 'Winter is coming.'
+async function storePageInfoBulk(bulkBody) {
+    const body = bulkBody.flatMap(doc => [{
+        index: {
+            _index: 'pageinfo'
         }
-    })
+    }, doc])
 
-    await client.index({
-        index: 'game-of-thrones',
-        //type: '_doc', // uncomment this line if you are using Elasticsearch ≤ 6
-        body: {
-            character: 'Daenerys Targaryen',
-            quote: 'I am the blood of the dragon.'
-        }
-    })
-
-    await client.index({
-        index: 'game-of-thrones',
-        //type: '_doc', // uncomment this line if you are using Elasticsearch ≤ 6
-        body: {
-            character: 'Tyrion Lannister',
-            quote: 'A mind needs books like a sword needs a whetstone.'
-        }
-    })
-
-    // here we are forcing an index refresh, otherwise we will not
-    // get any result in the consequent search
-    await client.indices.refresh({
-        index: 'game-of-thrones'
-    })
-
-    /*
-    // Let's search!
     const {
+        body: bulkResponse
+    } = await client.bulk({
+        refresh: true,
         body
-    } = await client.search({
-        index: 'game-of-thrones',
-        body: {
-            query: {
-                match: {
-                    quote: 'winter'
-                }
+    })
+
+    if (bulkResponse.errors) {
+        const erroredDocuments = []
+        // The items array has the same order of the dataset we just indexed.
+        // The presence of the `error` key indicates that the operation
+        // that we did for the document has failed.
+        bulkResponse.items.forEach((action, i) => {
+            const operation = Object.keys(action)[0]
+            if (action[operation].error) {
+                erroredDocuments.push({
+                    // If the status is 429 it means that you can retry the document,
+                    // otherwise it's very likely a mapping error, and you should
+                    // fix the document before to try it again.
+                    status: action[operation].status,
+                    error: action[operation].error,
+                    operation: body[i * 2],
+                    document: body[i * 2 + 1]
+                })
             }
-        }
-    })
-    const {
-        body
-    } = await client.get({
-        index: 'my-index',
-        id: '1'
-    })
-    //console.log(body)
+        })
+        console.log(erroredDocuments)
+    }
 
-    //console.log(body.hits.hits)
+    const {
+        body: count
+    } = await client.count({
+        index: 'pageinfo'
+    })
+    console.log(count)
 }
 
-//run().catch(console.log)
-run();
-
-*/
 
 // Search api
 async function onSearch(req, res) {
@@ -363,7 +418,7 @@ async function onSearch(req, res) {
             query: {
                 match: {
                     //title: `${searchInput}`,
-                    text: `${searchInput}`
+                    mainText: `${searchInput}`
                 }
             }
         }
@@ -372,11 +427,11 @@ async function onSearch(req, res) {
         maxRetries: 3
     })
 
-    if(body.hits.hits.length > 0) {
+    if (body.hits.hits.length > 0) {
         console.log(body.hits.hits.length)
-        for(let i=0;i<body.hits.hits.length;i++){
-            console.log(body.hits.hits[i]._source.URL)
-            console.log(body.hits.hits[i]._source.title)
+        for (let i = 0; i < body.hits.hits.length; i++) {
+            console.log(body.hits.hits[i]._source.siteURL)
+            console.log(body.hits.hits[i]._source.pageTitle)
             //console.log(body.hits.hits[i]._source.text)
         }
     }

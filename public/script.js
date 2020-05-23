@@ -35,10 +35,10 @@ function showResult(resultJson, searchInputValue) {
         resultListDiv.innerHTML = '';
 
     for(let i=0;i<resultJson.length;i++){
-        if(!resultJson[i]._source.URL)
+        if(!resultJson[i]._source.siteURL)
             continue;
-        if(resultJson[i++]._source.URL) {
-            if(resultJson[i++]._source.URL == resultJson[i]._source.URL) {
+        if(resultJson[i++]._source.siteURL) {
+            if(resultJson[i++]._source.siteURL == resultJson[i]._source.siteURL) {
                 resultJson.shift();
             }
         }
@@ -65,7 +65,7 @@ function showResult(resultJson, searchInputValue) {
         hnode.classList.add('mb-1')
         pnode.classList.add('mb-1')
 
-        titletext = `${resultJson[i]._source.title}`
+        titletext = `${resultJson[i]._source.pageTitle}`
 
         var titleIndex = titletext.indexOf(searchInputValue);
 
@@ -79,8 +79,8 @@ function showResult(resultJson, searchInputValue) {
 
 
         anode.appendChild(divnode);
-        anode.href = `${resultJson[i]._source.URL}`;
-        displaytext = `${resultJson[i]._source.text}`;
+        anode.href = `${resultJson[i]._source.siteURL}`;
+        displaytext = `${resultJson[i]._source.mainText}`;
 
 
         //let searchInputValueSplit = searchInputValue.split(' ');
