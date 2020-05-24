@@ -89,6 +89,13 @@ async function main() {
     }, {
         ignore: [400]
     })
+    await client.index({
+        index: 'udb',
+        id: '1',
+        body: {
+            link: `${link}`,
+        }
+    })
 
 
     var startTime = moment().format();
@@ -102,6 +109,9 @@ async function main() {
     console.log(link);
     console.log('success URL number: ' + successDB.length);
     for (let i = 0; i < 100; i++) {
+        var timeSpan = moment();
+        console.log('time span : ')
+        console.log(timeSpan.diff(startTime, 'seconds'));
         batchCrawler();
         await delay(10000);
         //console.log('link -> ');
@@ -128,7 +138,7 @@ async function main() {
         //console.log(bulkBody)
 
         storePageInfoBulk(bulkBody);
-
+        storeUDB(link);
         bulkBody = []
     }
     console.log(crawlercount);
@@ -356,6 +366,25 @@ async function storePageInfo(objInfo) {
     })
 }
 
+async function storeUDB(link) {
+    await client.update({
+        index: 'udb',
+        id: '1',
+        body: {
+            doc: {
+            link: `${link}`,
+            }
+        }
+    })
+
+    const { body } = await client.get({
+        index: 'udb',
+        id: '1'
+    })
+    
+    console.log(body)
+}
+
 
 async function storePageInfoBulk(bulkBody) {
     const body = bulkBody.flatMap(doc => [{
@@ -430,14 +459,13 @@ async function onSearch(req, res) {
     if (body.hits.hits.length > 0) {
         console.log(body.hits.hits.length)
         for (let i = 0; i < body.hits.hits.length; i++) {
-            console.log(body.hits.hits[i]._source.siteURL)
-            console.log(body.hits.hits[i]._source.pageTitle)
+            //console.log(body.hits.hits[i]._source.siteURL)
+            //console.log(body.hits.hits[i]._source.pageTitle)
             //console.log(body.hits.hits[i]._source.text)
         }
     }
     res.json(body.hits.hits);
     //res = body.hits.hits;
-
 }
 app.post('/api/search', onSearch);
 
