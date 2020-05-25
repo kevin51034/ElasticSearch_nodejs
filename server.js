@@ -89,19 +89,19 @@ async function main() {
     }, {
         ignore: [400]
     })
-    await client.index({
+    /*await client.index({
         index: 'udb',
         id: '1',
         body: {
             link: `${link}`,
         }
-    })
+    })*/
 
 
     var startTime = moment().format();
     console.log(startTime);
     batchCrawler();
-    const delay = t => { // 先撰寫一個等待的 function
+    const delay = t => { // wait function
         return new Promise(resolve => {
             setTimeout(resolve, t);
         });
@@ -382,7 +382,7 @@ async function storeUDB(link) {
         id: '1'
     })
     
-    console.log(body)
+    //console.log(body)
 }
 
 
@@ -433,7 +433,7 @@ async function storePageInfoBulk(bulkBody) {
 
 // Search api
 async function onSearch(req, res) {
-    console.log('onSearch');
+    //console.log('onSearch');
 
     const searchInput = req.body.searchInput;
 
@@ -469,7 +469,23 @@ async function onSearch(req, res) {
 }
 app.post('/api/search', onSearch);
 
+// UpdateInfo api
+async function updateInfo(req, res) {
+    //console.log('updateInfo');
 
+    //const searchInput = req.body.searchInput;
+
+    let body = {
+        seenDBTable: seenDBTable,
+        successDB: successDB,
+        link: link
+    };
+
+
+    res.json(body);
+    //res = body.hits.hits;
+}
+app.get('/api/updateInfo', updateInfo);
 
 
 const port = process.env.PORT || 3000;

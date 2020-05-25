@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+    <title>Elastic</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+        integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+        integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous">
+    </script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+        integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous">
+    </script>
+
+    <script src="./dashboardScript.js" defer></script>
+    <link rel="stylesheet" type="text/css" href="./dashboardScript.css" defer />
+
+</head>
+
+<body>
+    <div class="input-group-append">
+        <button class="btn btn-outline-secondary" type="button" id='updateButton'>update</button>
+    </div>
+
+    <div class="row">
+        <div class="card border-primary mb-3" style="width: 18rem;">
+            <div class="card-header"><h3>seenDB</h3></div>
+            <div class="card-body text-primary" id = 'cardBody1'>
+                <h1 class="card-title" id ='cardTitle1'>Primary card title</h1>
+            </div>
+        </div>
+        <div class="card border-secondary mb-3" style="width: 18rem;">
+            <div class="card-header"><h3>UDB</h3></div>
+            <div class="card-body text-secondary">
+                <h1 class="card-title" id ='cardTitle2'>Secondary card title</h1>
+            </div>
+        </div>
+        <div class="card border-success mb-3" style="width: 18rem;">
+            <div class="card-header"><h3>successDB</h3></div>
+            <div class="card-body text-success">
+                <h1 class="card-title" id ='cardTitle3'>Success card title</h1>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+
+        <div class="card border-danger mb-3" style="width: 18rem;">
+            <div class="card-header">Header</div>
+            <div class="card-body text-danger">
+                <h1 class="card-title" id ='cardTitle4'>Danger card title</h1>
+            </div>
+        </div>
+        <div class="card border-warning mb-3" style="width: 18rem;">
+            <div class="card-header">Header</div>
+            <div class="card-body text-warning">
+                <h1 class="card-title" id ='cardTitle5'>Warning card title</h1>
+            </div>
+        </div>
+        <div class="card border-dark mb-3" style="width: 18rem;">
+            <div class="card-header">Header</div>
+            <div class="card-body text-dark">
+                <h1 class="card-title" id ='cardTitle6'>Dark card title</h1>
+            </div>
+        </div>
+    </div>
+
+
+</body>
+
+</html>

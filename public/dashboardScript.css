@@ -1,0 +1,19 @@
+body {
+    text-align: center;
+}
+
+#searchBox {
+    margin: 0 auto;
+    margin-top: 25%;
+    width: 80%;
+    text-align:center;
+}
+
+.highlight {
+    color: red;
+}
+
+#searchResultDiv {
+    margin: 0 auto;
+    width: 80%;
+}
