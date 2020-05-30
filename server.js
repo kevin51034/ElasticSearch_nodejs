@@ -47,6 +47,7 @@ const successDB = [];
 let crawlercount = 0;
 //const pageInfoDB = [];
 let bulkBody = [];
+let timeSpanTotal = 0;
 // robots-parser
 
 async function main() {
@@ -112,6 +113,7 @@ async function main() {
         var timeSpan = moment();
         console.log('time span : ')
         console.log(timeSpan.diff(startTime, 'seconds'));
+        timeSpanTotal = timeSpan.diff(startTime, 'seconds')
         batchCrawler();
         await delay(10000);
         //console.log('link -> ');
@@ -471,14 +473,12 @@ app.post('/api/search', onSearch);
 
 // UpdateInfo api
 async function updateInfo(req, res) {
-    //console.log('updateInfo');
-
-    //const searchInput = req.body.searchInput;
 
     let body = {
         seenDBTable: seenDBTable,
         successDB: successDB,
-        link: link
+        link: link,
+        timeSpanTotal: timeSpanTotal
     };
 
 
