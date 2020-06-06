@@ -38,75 +38,42 @@ app.use(express.static('public'));
 //const url1 = 'https://github.com/'
 //const url1 = 'https://www.ettoday.net/';
 //const url1 = 'https://www.ptt.cc/bbs'
-const url1 = 'https://www.ptt.cc/bbs/Gossiping/index.html'
-const link = [
-    [url1, 0]
-];
+//const url1 = 'https://www.ptt.cc/bbs/Gossiping/index.html'
+//const link = [url1, 0];
+const link = [];
+
 const seenDBTable = [];
 const successDB = [];
+const failDB = [];
 let crawlercount = 0;
 //const pageInfoDB = [];
 let bulkBody = [];
 let timeSpanTotal = 0;
 // robots-parser
+const delay = t => { // wait function
+    return new Promise(resolve => {
+        setTimeout(resolve, t);
+    });
+};
 
 async function main() {
+    await delay(5000);
 
-    await client.indices.create({
-        index: 'pageinfo',
-        body: {
-            mappings: {
-                properties: {
-                    crawlTime: {
-                        type: 'date'
-                    },
-                    siteURL: {
-                        type: 'text'
-                    },
-                    hostURL: {
-                        type: 'text'
-                    },
-                    ip: {
-                        type: 'text'
-                    },
-                    domain: {
-                        type: 'text'
-                    },
-                    statusCode: {
-                        type: 'integer'
-                    },
-                    pageDepth: {
-                        type: 'integer'
-                    },
-                    pageTitle: {
-                        type: 'text'
-                    },
-                    mainText: {
-                        type: 'text'
-                    },
-                }
-            }
-        }
-    }, {
-        ignore: [400]
-    })
-    /*await client.index({
-        index: 'udb',
-        id: '1',
-        body: {
-            link: `${link}`,
-        }
-    })*/
+    // initialization
+    await initialization(link);
 
+    console.log('test:')
+
+    //console.log(link)
+    console.log(link[0])
+    console.log(link[1])
+
+    await delay(10000);
 
     var startTime = moment().format();
     console.log(startTime);
     batchCrawler();
-    const delay = t => { // wait function
-        return new Promise(resolve => {
-            setTimeout(resolve, t);
-        });
-    };
+
     console.log(link);
     console.log('success URL number: ' + successDB.length);
     for (let i = 0; i < 100; i++) {
@@ -115,13 +82,13 @@ async function main() {
         console.log(timeSpan.diff(startTime, 'seconds'));
         timeSpanTotal = timeSpan.diff(startTime, 'seconds')
         batchCrawler();
-        await delay(10000);
+        await delay(5000);
         //console.log('link -> ');
         //console.log(link);
         console.log('success URL number: ' + successDB.length);
-        await client.indices.refresh({
+        /*await client.indices.refresh({
             index: 'pageinfo'
-        })
+        })*/
         var batchTime = moment().format();
         console.log('batch time : ')
         console.log(batchTime)
@@ -135,13 +102,16 @@ async function main() {
                 console.log('Write operation complete.');
         });*/
 
-
-        //console.log(outputInfoDB)
-        //console.log(bulkBody)
-
-        storePageInfoBulk(bulkBody);
+        // TODO: decrease bulkBody request number
+        if (bulkBody.length > 1500) {
+            console.log('request bulk')
+            storePageInfoBulk(bulkBody);
+            bulkBody = [];
+        }
         storeUDB(link);
-        bulkBody = []
+
+        await delay(5000);
+
     }
     console.log(crawlercount);
     //batchCrawler();
@@ -154,10 +124,12 @@ async function batchCrawler() {
     for (let count = 0; link.length > 0 && count < 150; count++) {
         crawlercount++;
         if (link[count]) {
-            let url = link[count][0];
-            let depth = ++link[count][1];
+            let url = link[0];
+            let depth = ++link[1];
             //console.log(depth)
             link.shift();
+            link.shift();
+
             if (depth > 15) {
                 console.log('page depth > 15: return')
                 continue;
@@ -179,10 +151,10 @@ async function dorequest(url, depth) {
     }, (err, res, body) => {
         //console.log('Crawling  -> ' + `${url}`)
         if (err) {
-            return
+            return;
         }
         if (res.statusCode !== 200) {
-            return
+            return;
         }
 
         // page Info
@@ -218,7 +190,7 @@ async function dorequest(url, depth) {
         }
         const $ = cheerio.load(body)
         //console.log($.html());
-        let linkmd5 = [];
+        //let linkmd5 = [];
         let pageTitle = $("title").text();
         objInfo['pageTitle'] = pageTitle;
 
@@ -233,8 +205,8 @@ async function dorequest(url, depth) {
 
                 if (seen === 0) {
                     //console.log('push link')
-                    link.push([thisurl, depth]);
-                    linkmd5.push(md5(thisurl));
+                    link.push(thisurl, depth);
+                    //linkmd5.push(md5(thisurl));
                 }
             }
         })
@@ -292,7 +264,7 @@ async function dorequest(url, depth) {
             // select all text
             let text = [];
             $('div').map(function (i, elem) {
-                    text.push($(this).text().replace(/^\s+|\s+$/gm, ''));
+                text.push($(this).text().replace(/^\s+|\s+$/gm, ''));
             })
             objInfo['mainText'] = text;
         }
@@ -369,22 +341,16 @@ async function storePageInfo(objInfo) {
 }
 
 async function storeUDB(link) {
+    jsonlink = JSON.stringify(link)
     await client.update({
         index: 'udb',
         id: '1',
         body: {
             doc: {
-            link: `${link}`,
+                link: `${jsonlink}`,
             }
         }
     })
-
-    const { body } = await client.get({
-        index: 'udb',
-        id: '1'
-    })
-    
-    //console.log(body)
 }
 
 
@@ -484,8 +450,88 @@ async function updateInfo(req, res) {
 
     res.json(body);
     //res = body.hits.hits;
+
+
+
 }
 app.get('/api/updateInfo', updateInfo);
+
+
+
+// initialization when restart
+async function initialization(link) {
+    const {
+        body
+    } = await client.get({
+        index: 'udb',
+        id: '1'
+    })
+    //console.log(body);
+    parselink = JSON.parse(body._source.link);
+    link[0] = parselink[0];
+    link[1] = parselink[1];
+    //console.log(link);
+    return new Promise(resolve => {
+        setTimeout(() => {
+            resolve(link);
+        }, 0);
+    });
+
+}
+
+
+// Reset index api
+async function resetIndex(req, res) {
+
+    await client.indices.create({
+        index: 'pageinfo',
+        body: {
+            mappings: {
+                properties: {
+                    crawlTime: {
+                        type: 'date'
+                    },
+                    siteURL: {
+                        type: 'text'
+                    },
+                    hostURL: {
+                        type: 'text'
+                    },
+                    ip: {
+                        type: 'text'
+                    },
+                    domain: {
+                        type: 'text'
+                    },
+                    statusCode: {
+                        type: 'integer'
+                    },
+                    pageDepth: {
+                        type: 'integer'
+                    },
+                    pageTitle: {
+                        type: 'text'
+                    },
+                    mainText: {
+                        type: 'text'
+                    },
+                }
+            }
+        }
+    }, {
+        ignore: [400]
+    })
+    initlink = JSON.stringify(['https://www.ptt.cc/bbs/Gossiping/index.html', 0]);
+    await client.index({
+        index: 'udb',
+        id: '1',
+        body: {
+            link: initlink
+        }
+    })
+    res.json('reset succeed');
+}
+app.get('/api/resetIndex', resetIndex);
 
 
 const port = process.env.PORT || 3000;
