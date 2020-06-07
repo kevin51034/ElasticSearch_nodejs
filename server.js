@@ -57,18 +57,16 @@ const delay = t => { // wait function
 };
 
 async function main() {
-    await delay(5000);
+    await delay(3000);
 
     // initialization
-    await initialization(link);
+    initialization(link, seenDBTable);
 
-    console.log('test:')
 
-    //console.log(link)
-    console.log(link[0])
-    console.log(link[1])
 
-    await delay(10000);
+    await delay(5000);
+    //console.log(link);
+    //console.log(seenDBTable);
 
     var startTime = moment().format();
     console.log(startTime);
@@ -103,12 +101,13 @@ async function main() {
         });*/
 
         // TODO: decrease bulkBody request number
-        if (bulkBody.length > 1500) {
+        if (bulkBody.length > 150) {
             console.log('request bulk')
             storePageInfoBulk(bulkBody);
             bulkBody = [];
+            storeDB(link, seenDBTable);
+
         }
-        storeUDB(link);
 
         await delay(5000);
 
@@ -130,8 +129,8 @@ async function batchCrawler() {
             link.shift();
             link.shift();
 
-            if (depth > 15) {
-                console.log('page depth > 15: return')
+            if (depth > 30) {
+                console.log('page depth > 30: return')
                 continue;
             }
             dorequest(url, depth)
@@ -151,9 +150,11 @@ async function dorequest(url, depth) {
     }, (err, res, body) => {
         //console.log('Crawling  -> ' + `${url}`)
         if (err) {
+            failDB.push(url)
             return;
         }
-        if (res.statusCode !== 200) {
+        if (res.statusCode >= 300) {
+            failDB.push(url)
             return;
         }
 
@@ -340,15 +341,30 @@ async function storePageInfo(objInfo) {
     })
 }
 
-async function storeUDB(link) {
-    jsonlink = JSON.stringify(link)
-    await client.update({
+async function storeDB(link, seenDBTable) {
+    jsonlink = JSON.stringify(link);
+    jsontable = JSON.stringify(seenDBTable);
+    /*await client.update({
         index: 'udb',
         id: '1',
         body: {
             doc: {
                 link: `${jsonlink}`,
             }
+        }
+    })*/
+    await client.index({
+        index: 'udb',
+        id: '1',
+        body: {
+            link: `${jsonlink}`,
+        }
+    })
+    await client.index({
+        index: 'seenhashtable',
+        id: '1',
+        body: {
+            table: `${jsontable}`,
         }
     })
 }
@@ -444,41 +460,97 @@ async function updateInfo(req, res) {
         seenDBTable: seenDBTable,
         successDB: successDB,
         link: link,
-        timeSpanTotal: timeSpanTotal
+        timeSpanTotal: timeSpanTotal,
+        failDB: failDB
     };
-
-
     res.json(body);
-    //res = body.hits.hits;
-
-
-
 }
 app.get('/api/updateInfo', updateInfo);
 
-
-
-// initialization when restart
-async function initialization(link) {
+// updateHistoryInfo api
+async function updateHistoryInfo(req, res) {
     const {
         body
     } = await client.get({
         index: 'udb',
         id: '1'
     })
-    //console.log(body);
     parselink = JSON.parse(body._source.link);
-    link[0] = parselink[0];
-    link[1] = parselink[1];
-    //console.log(link);
+    const {
+        body: count
+    } = await client.count({
+        index: 'pageinfo'
+    })
+    console.log(count)
+    let resbody = {
+        seenDBTable: seenDBTable, //need modify
+        successDB: count.count,
+        link: parselink,
+        timeSpanTotal: timeSpanTotal, //need modify
+        failDB: failDB //need modify
+    };
+    res.json(resbody);
+}
+app.get('/api/updateHistoryInfo', updateHistoryInfo);
+
+// initialization when restart
+async function initialization(link, seenDBTable) {
+    await getlink(link);
+    await getseenTable(seenDBTable)
+    return link, seenDBTable;
+}
+async function getlink(link) {
+    const {
+        body
+    } = await client.get({
+        index: 'udb',
+        id: '1'
+    })
+    parselink = JSON.parse(body._source.link);
+    for (let i = 0; i < 100 && parselink.length > 0; i++) {
+        link[i] = parselink[0];
+        parselink.shift();
+    }
+    //link = parselink;
+    console.log(link)
+    console.log(parselink)
+
+
+    stringlink = JSON.stringify(parselink);
+    await client.update({
+        index: 'udb',
+        id: '1',
+
+        body: {
+            doc: {
+                link: `${stringlink}`,
+            }
+        }
+    })
+    console.log(link)
     return new Promise(resolve => {
         setTimeout(() => {
             resolve(link);
         }, 0);
     });
-
 }
+async function getseenTable(seenDBTable) {
+    const {
+        body
+    } = await client.get({
+        index: 'seenhashtable',
+        id: '1'
+    })
+    parsetable = JSON.parse(body._source.table);
+    seenDBTable = parsetable;
+    console.log(seenDBTable)
 
+    return new Promise(resolve => {
+        setTimeout(() => {
+            resolve(seenDBTable);
+        }, 0);
+    });
+}
 
 // Reset index api
 async function resetIndex(req, res) {
@@ -527,6 +599,14 @@ async function resetIndex(req, res) {
         id: '1',
         body: {
             link: initlink
+        }
+    })
+    inittable = JSON.stringify(seenDBTable);
+    await client.index({
+        index: 'seenhashtable',
+        id: '1',
+        body: {
+            table: inittable
         }
     })
     res.json('reset succeed');
