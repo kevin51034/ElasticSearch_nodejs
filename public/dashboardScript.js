@@ -3,7 +3,10 @@ async function updateInfo() {
     console.log('updateInfo');
 
     const response = await fetch('/api/updateInfo', {
-        method: 'GET'
+        method: 'GET',
+        headers: {
+            Accept: 'application/json',
+        },
     });
     const json = await response.json();
 
@@ -16,7 +19,10 @@ async function resetIndex() {
     console.log('resetIndex');
 
     const response = await fetch('/api/resetIndex', {
-        method: 'GET'
+        method: 'GET',
+        headers: {
+            Accept: 'application/json',
+        },
     });
     const json = await response.json();
 
@@ -48,7 +54,10 @@ async function updateHistoryInfo() {
     console.log('updateHistoryInfo');
 
     const response = await fetch('/api/updateHistoryInfo', {
-        method: 'GET'
+        method: 'GET',
+        headers: {
+            Accept: 'application/json',
+        },
     });
     const json = await response.json();
 
@@ -77,6 +86,102 @@ async function showHistoryInfo(json) {
 
 }
 
+async function updateTable() {
+    const response = await fetch('/api/getDatatable', {
+        method: 'GET',
+        headers: {
+            Accept: 'application/json',
+        },
+    });
+    const json = await response.json();
+    console.log(json)
+    //const info = getParameters();
+    //const response = await fetch(info.path, info.options);
+    //const json = await response.json();
+
+    $('#datatable').DataTable().destroy();
+    //$('#datatable').DataTable().empty();
+
+    $('#datatable').DataTable({
+        dom: 'lBfrtip',
+        /*buttons: [
+            'copy', 'csv', 'excel', 'print', 'colvis', //'pdf'
+        ],*/
+        
+        data: json.tablebody,
+        columns: [{
+                data: 'hostURL'
+            },
+            {
+                data: 'count'
+            },
+            {
+                data: 'ipcount'
+            },
+            {
+                data: 'ip'
+            },
+            {
+                data: 'domaincount'
+            },
+            /*{
+                data: 'domain'
+            },*/
+        ],
+
+        // select search
+        initComplete: function () {
+            this.api().columns().every(function () {
+                var column = this;
+                var select = $('<select><option value=""></option></select>')
+                    .appendTo($(column.footer()).empty())
+                    .on('change', function () {
+                        var val = $.fn.dataTable.util.escapeRegex(
+                            $(this).val()
+                        );
+                        column
+                            .search(val ? '^' + val + '$' : '', true, false)
+                            .draw();
+                    });
+                column.data().unique().sort().each(function (d, j) {
+                    select.append('<option value="' + d + '">' + d + '</option>')
+                });
+            });
+        },
+    });
+
+    // text search
+    /*$('input.global_filter').on('keyup click', function () {
+        filterGlobal();
+    });
+
+    $('input.column_filter').on('keyup click', function () {
+        filterColumn($(this).parents('tr').attr('data-column'));
+    });
+
+    resultsDiv.textContent = JSON.stringify(json, null, 2);*/
+    //console.log(resultsDiv.textContent);
+
+    //const resultsContainer = document.querySelector('#results-container');
+    //resultsContainer.classList.remove('hidden');
+    const datatable = document.querySelector('#datatable');
+    datatable.classList.remove('hidden');
+
+    /*const filterButtondiv = document.querySelector('#filterButtondiv');
+    filterButtondiv.classList.remove('hidden');
+    loading.classList.add('hidden');*/
+}
+
+async function showHomeSection() {
+    dataSection.classList.add('hidden');
+    statusSection.classList.remove('hidden');
+}
+
+async function showDataSection() {
+    statusSection.classList.add('hidden');
+    dataSection.classList.remove('hidden');
+}
+
 const updateButton = document.querySelector('#updateButton');
 updateButton.addEventListener('click', updateInfo);
 
@@ -85,6 +190,18 @@ updateHistoryButton.addEventListener('click', updateHistoryInfo);
 
 const resetIndexButton = document.querySelector('#resetIndexButton');
 resetIndexButton.addEventListener('click', resetIndex);
+
+const navHome = document.querySelector('#navHome');
+navHome.addEventListener('click', showHomeSection);
+
+const navData = document.querySelector('#navData');
+navData.addEventListener('click', showDataSection);
+
+const statusSection = document.querySelector('#statusSection');
+const dataSection = document.querySelector('#dataSection');
+
+const updateTableButton = document.querySelector('#updateTableButton');
+updateTableButton.addEventListener('click', updateTable);
 
 
 setInterval(updateInfo, 1000 * 5);

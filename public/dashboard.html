@@ -22,107 +22,209 @@
     <script src="./dashboardScript.js" defer></script>
     <link rel="stylesheet" type="text/css" href="./dashboardScript.css" defer />
 
+    <!-- datatable -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css" />
+    <link rel="stylesheet" type="text/css"
+        href="https://cdn.datatables.net/buttons/1.6.1/css/buttons.dataTables.min.css" />
+
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.0.2/css/uikit.min.css"
+        defer />
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.20/css/dataTables.uikit.min.css"
+        defer />
+
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js" defer></script>
+    <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js" defer></script>
+
+    <script type="text/javascript" language="javascript" src="https://code.jquery.com/jquery-3.3.1.js" defer></script>
+    <script type="text/javascript" language="javascript"
+        src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js" defer></script>
+    <script type="text/javascript" language="javascript"
+        src="https://cdn.datatables.net/buttons/1.6.1/js/dataTables.buttons.min.js" defer></script>
+    <script type="text/javascript" language="javascript"
+        src="https://cdn.datatables.net/buttons/1.6.1/js/buttons.flash.min.js" defer></script>
+        <script type="text/javascript" language="javascript"
+        src="https://cdn.datatables.net/buttons/1.6.1/js/buttons.html5.min.js" defer></script>
+    <script type="text/javascript" language="javascript"
+        src="https://cdn.datatables.net/buttons/1.6.1/js/buttons.print.min.js" defer></script>
+    <script type="text/javascript" language="javascript"
+        src="https://cdn.datatables.net/buttons/1.6.1/js/buttons.colVis.min.js" defer></script>
+
+    <!-- datatable -->
+
 </head>
 
 <body>
-    <div class="input-group-append">
-        <button class="btn btn-outline-secondary" type="button" id='updateButton'>update</button>
+    <nav class="navbar sticky-top navbar-expand-lg navbar-dark bg-dark">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+            <li class="nav-item active">
+                <a class="nav-link" href="#" id='navHome'>
+                    <i class="fas fa-home"></i>
+                    status <span class="sr-only">(current)</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" id='navData'>
+                    <i class="far fa-address-book"></i>
+                    data
+                </a>
+            </li>
+        </ul>
     </div>
-    <div class="input-group-append">
-        <button class="btn btn-outline-secondary" type="button" id='updateHistoryButton'>update history</button>
-    </div>
-    <div class="input-group-append">
-        <button class="btn btn-outline-secondary" type="button" id='resetIndexButton'>reset index</button>
-    </div>
+    </nav>
+    <section class='sec' id='statusSection'>
 
-    <h1>This crawling status:</h1>
+        <div class="input-group-append">
+            <button class="btn btn-outline-secondary" type="button" id='updateButton'>update</button>
+        </div>
+        <div class="input-group-append">
+            <button class="btn btn-outline-secondary" type="button" id='updateHistoryButton'>update history</button>
+        </div>
+        <div class="input-group-append">
+            <button class="btn btn-outline-secondary" type="button" id='resetIndexButton'>reset index</button>
+        </div>
 
-    <div class="row">
-        <div class="card border-primary mb-3" style="width: 18rem;">
-            <div class="card-header"><h3>seenDB</h3></div>
-            <div class="card-body text-primary" id = 'cardBody1'>
-                <h1 class="card-title" id ='cardTitle1'>Primary card title</h1>
-            </div>
-        </div>
-        <div class="card border-secondary mb-3" style="width: 18rem;">
-            <div class="card-header"><h3>UDB</h3></div>
-            <div class="card-body text-secondary">
-                <h1 class="card-title" id ='cardTitle2'>Secondary card title</h1>
-            </div>
-        </div>
-        <div class="card border-success mb-3" style="width: 18rem;">
-            <div class="card-header"><h3>successDB</h3></div>
-            <div class="card-body text-success">
-                <h1 class="card-title" id ='cardTitle3'>Success card title</h1>
-            </div>
-        </div>
-    </div>
-    <div class="row">
+        <h1>This crawling status:</h1>
 
-        <div class="card border-danger mb-3" style="width: 18rem;">
-            <div class="card-header">Header</div>
-            <div class="card-body text-danger">
-                <h1 class="card-title" id ='cardTitle4'>Danger card title</h1>
+        <div class="row">
+            <div class="card border-primary mb-3" style="width: 18rem;">
+                <div class="card-header">
+                    <h3>seenDB</h3>
+                </div>
+                <div class="card-body text-primary" id='cardBody1'>
+                    <h1 class="card-title" id='cardTitle1'>Primary card title</h1>
+                </div>
+            </div>
+            <div class="card border-secondary mb-3" style="width: 18rem;">
+                <div class="card-header">
+                    <h3>UDB</h3>
+                </div>
+                <div class="card-body text-secondary">
+                    <h1 class="card-title" id='cardTitle2'>Secondary card title</h1>
+                </div>
+            </div>
+            <div class="card border-success mb-3" style="width: 18rem;">
+                <div class="card-header">
+                    <h3>successDB</h3>
+                </div>
+                <div class="card-body text-success">
+                    <h1 class="card-title" id='cardTitle3'>Success card title</h1>
+                </div>
             </div>
         </div>
-        <div class="card border-dark mb-3" style="width: 18rem;">
-            <div class="card-header"><h3>Speed</h3></div>
-            <div class="card-body text-dark">
-                <h1 class="card-title" id ='cardTitle5'>Dark card title</h1>
+        <div class="row">
+
+            <div class="card border-danger mb-3" style="width: 18rem;">
+                <div class="card-header">failDB</div>
+                <div class="card-body text-danger">
+                    <h1 class="card-title" id='cardTitle4'>Danger card title</h1>
+                </div>
+            </div>
+            <div class="card border-dark mb-3" style="width: 18rem;">
+                <div class="card-header">
+                    <h3>Speed</h3>
+                </div>
+                <div class="card-body text-dark">
+                    <h1 class="card-title" id='cardTitle5'>Dark card title</h1>
+                </div>
+            </div>
+            <div class="card border-dark mb-3" style="width: 18rem;">
+                <div class="card-header">
+                    <h3>Tima Span</h3>
+                </div>
+                <div class="card-body text-dark">
+                    <h1 class="card-title" id='cardTitle6'>Dark card title</h1>
+                </div>
             </div>
         </div>
-        <div class="card border-dark mb-3" style="width: 18rem;">
-            <div class="card-header"><h3>Tima Span</h3></div>
-            <div class="card-body text-dark">
-                <h1 class="card-title" id ='cardTitle6'>Dark card title</h1>
-            </div>
-        </div>
-    </div>
 
 
-    <h1>Total status:</h1>
+        <h1>Total status:</h1>
 
-    <div class="row">
-        <div class="card border-primary mb-3" style="width: 18rem;">
-            <div class="card-header"><h3>seenDB</h3></div>
-            <div class="card-body text-primary" id = 'cardBody1'>
-                <h1 class="card-title" id ='cardTitle7'>Primary card title</h1>
+        <div class="row">
+            <div class="card border-primary mb-3" style="width: 18rem;">
+                <div class="card-header">
+                    <h3>seenDB</h3>
+                </div>
+                <div class="card-body text-primary" id='cardBody1'>
+                    <h1 class="card-title" id='cardTitle7'>Primary card title</h1>
+                </div>
+            </div>
+            <div class="card border-secondary mb-3" style="width: 18rem;">
+                <div class="card-header">
+                    <h3>UDB</h3>
+                </div>
+                <div class="card-body text-secondary">
+                    <h1 class="card-title" id='cardTitle8'>Secondary card title</h1>
+                </div>
+            </div>
+            <div class="card border-success mb-3" style="width: 18rem;">
+                <div class="card-header">
+                    <h3>successDB</h3>
+                </div>
+                <div class="card-body text-success">
+                    <h1 class="card-title" id='cardTitle9'>Success card title</h1>
+                </div>
             </div>
         </div>
-        <div class="card border-secondary mb-3" style="width: 18rem;">
-            <div class="card-header"><h3>UDB</h3></div>
-            <div class="card-body text-secondary">
-                <h1 class="card-title" id ='cardTitle8'>Secondary card title</h1>
-            </div>
-        </div>
-        <div class="card border-success mb-3" style="width: 18rem;">
-            <div class="card-header"><h3>successDB</h3></div>
-            <div class="card-body text-success">
-                <h1 class="card-title" id ='cardTitle9'>Success card title</h1>
-            </div>
-        </div>
-    </div>
-    <div class="row">
+        <div class="row">
 
-        <div class="card border-danger mb-3" style="width: 18rem;">
-            <div class="card-header">Header</div>
-            <div class="card-body text-danger">
-                <h1 class="card-title" id ='cardTitle10'>Danger card title</h1>
+            <div class="card border-danger mb-3" style="width: 18rem;">
+                <div class="card-header">failDB</div>
+                <div class="card-body text-danger">
+                    <h1 class="card-title" id='cardTitle10'>Danger card title</h1>
+                </div>
+            </div>
+            <div class="card border-dark mb-3" style="width: 18rem;">
+                <div class="card-header">
+                    <h3>Speed</h3>
+                </div>
+                <div class="card-body text-dark">
+                    <h1 class="card-title" id='cardTitle11'>Dark card title</h1>
+                </div>
+            </div>
+            <div class="card border-dark mb-3" style="width: 18rem;">
+                <div class="card-header">
+                    <h3>Tima Span</h3>
+                </div>
+                <div class="card-body text-dark">
+                    <h1 class="card-title" id='cardTitle12'>Dark card title</h1>
+                </div>
             </div>
         </div>
-        <div class="card border-dark mb-3" style="width: 18rem;">
-            <div class="card-header"><h3>Speed</h3></div>
-            <div class="card-body text-dark">
-                <h1 class="card-title" id ='cardTitle11'>Dark card title</h1>
-            </div>
+    </section>
+
+    <section class='sec hidden' id='dataSection'>
+        <div class="input-group-append">
+            <button class="btn btn-outline-secondary" type="button" id='updateTableButton'>updateData</button>
         </div>
-        <div class="card border-dark mb-3" style="width: 18rem;">
-            <div class="card-header"><h3>Tima Span</h3></div>
-            <div class="card-body text-dark">
-                <h1 class="card-title" id ='cardTitle12'>Dark card title</h1>
-            </div>
-        </div>
-    </div>
+        <!--  datatable -->
+        <table id="datatable" class="display compact hidden" style="width:95%">
+            <thead>
+                <tr>
+                    <th>hostURL</th>
+                    <th>count</th>
+                    <th>ip count</th>
+                    <th>ip</th>
+                    <th>domaincount</th>
+                </tr>
+            </thead>
+            <tfoot>
+                <tr>
+                    <th>hostURL</th>
+                    <th>count</th>
+                    <th>ip count</th>
+                    <th>ip</th>
+                    <th>domaincount</th>
+                </tr>
+            </tfoot>
+        </table>
+    </section>
 
 </body>
 

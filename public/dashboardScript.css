@@ -21,3 +21,7 @@ body {
 .card {
     margin: 2%;
 }
+
+.hidden {
+    display: none;
+}

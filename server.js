@@ -18,12 +18,6 @@ const client = new Client({
     node: 'http://localhost:9200'
 })
 
-/*const elasticsearch = require('elasticsearch');
-const client = new elasticsearch.Client({
-    host: 'local:9200',
-    log: 'error'
-});*/
-
 //'use strict'
 
 const app = express();
@@ -60,11 +54,11 @@ async function main() {
     await delay(3000);
 
     // initialization
-    initialization(link, seenDBTable);
+    //initialization(link, seenDBTable);
+    await getlink(link);
+    await getseenTable(seenDBTable);
 
-
-
-    await delay(5000);
+    await delay(3000);
     //console.log(link);
     //console.log(seenDBTable);
 
@@ -81,8 +75,7 @@ async function main() {
         timeSpanTotal = timeSpan.diff(startTime, 'seconds')
         batchCrawler();
         await delay(5000);
-        //console.log('link -> ');
-        //console.log(link);
+
         console.log('success URL number: ' + successDB.length);
         /*await client.indices.refresh({
             index: 'pageinfo'
@@ -91,17 +84,8 @@ async function main() {
         console.log('batch time : ')
         console.log(batchTime)
         //console.log(seenDBTable);
-        /*
-        let outputInfoDB = JSON.stringify(pageInfoDB);
-        fs.writeFile(`./pageInfoDB.json`, `${outputInfoDB}`, function (err) {
-            if (err)
-                console.log(err);
-            else
-                console.log('Write operation complete.');
-        });*/
 
-        // TODO: decrease bulkBody request number
-        if (bulkBody.length > 150) {
+        if (bulkBody.length > 1500) {
             console.log('request bulk')
             storePageInfoBulk(bulkBody);
             bulkBody = [];
@@ -115,7 +99,7 @@ async function main() {
     console.log(crawlercount);
     //batchCrawler();
 }
-main();
+//main();
 
 
 // batch process
@@ -125,10 +109,8 @@ async function batchCrawler() {
         if (link[count]) {
             let url = link[0];
             let depth = ++link[1];
-            //console.log(depth)
             link.shift();
             link.shift();
-
             if (depth > 30) {
                 console.log('page depth > 30: return')
                 continue;
@@ -138,7 +120,6 @@ async function batchCrawler() {
             return;
         }
     }
-
 }
 
 async function dorequest(url, depth) {
@@ -182,9 +163,8 @@ async function dorequest(url, depth) {
                     objInfo['domain'] = hostname;
                 });
             }
-
         });
-
+        //await delay(1000);
 
         if (!body) {
             return 0;
@@ -195,59 +175,21 @@ async function dorequest(url, depth) {
         let pageTitle = $("title").text();
         objInfo['pageTitle'] = pageTitle;
 
-        //let hashKey = [];
-
         $('a').each(function (i, elem) {
             if ($(this).attr('href')) {
                 //link.push($(this).attr('href'));
                 thisurl = $(this).attr('href').startsWith('http') ? $(this).attr('href') : (hostUrl + $(this).attr('href'));
                 //let seen = HashTable.put(md5(thisurl), thisurl, seenDBTable);
                 let seen = HashTable.put(md5(thisurl), seenDBTable);
-
                 if (seen === 0) {
-                    //console.log('push link')
                     link.push(thisurl, depth);
                     //linkmd5.push(md5(thisurl));
                 }
             }
         })
 
-        /*
-        fs.writeFile('udb.txt', `${link}`, function (err) {
-            if (err)
-                console.log(err);
-            //else
-            //console.log('Write operation complete.');
-        });
-        
-                fs.writeFile('linkmd5.txt', `${linkmd5}`, function (err) {
-                    if (err)
-                        console.log(err);
-                    //else
-                    //console.log('Write operation complete.');
-                });*/
-
-        /* seenDBTable
-        var obj = {
-            table: seenDBTable
-        };
-        let outputObj = JSON.stringify(obj);
-        fs.writeFile('seenhashTable.json', `${outputObj}`, function (err) {
-            if (err)
-                console.log(err);
-            //else
-            //console.log('Write operation complete.');
-        });*/
-
-
-
-
-        //console.log(text)
-        //objInfo['text body'] = text;
-
         if (objInfo['hostURL'] == 'https://www.ptt.cc' && $('#main-content')) {
             // ptt main content
-            //console.log('main1')
             let text = '';
             $('#main-content').map(function (i, elem) {
                 if ($(this).text().length > text.length) {
@@ -255,13 +197,10 @@ async function dorequest(url, depth) {
                     //console.log($(this).text().trim())
                     text = $(this).text().replace(/^\s+|\s+$/gm, '')
                     //text.push($(this).text());
-
                 }
             })
             objInfo['mainText'] = text;
         } else {
-            //console.log('main2')
-
             // select all text
             let text = [];
             $('div').map(function (i, elem) {
@@ -269,59 +208,10 @@ async function dorequest(url, depth) {
             })
             objInfo['mainText'] = text;
         }
-
-
-
-        /*
-        fs.writeFile('text.txt', `${text}`, function (err) {
-            if (err)
-                console.log(err);
-            //else
-            //console.log('Write operation complete.');
-        });
-        fs.writeFile('body.txt', `${body}`, function (err) {
-            if (err)
-                console.log(err);
-            //else
-            //console.log('Write operation complete.');
-        });*/
-
-        /*
-        // InfoDB output
-        setTimeout(() => {
-            console.log('wait 5s');
-            let outputObjInfo = JSON.stringify(objInfo);
-            fs.writeFile(`./InfoDB/${md5(myURL)}.json`, `${outputObjInfo}`, function (err) {
-                if (err)
-                    console.log(err);
-                else
-                    console.log('Write operation complete.');
-            });
-        }, 3000);*/
-
         successDB.push(myURL);
-
-        /*objSuccess['successURL'] = successDB;
-        let outputObjSuccess = JSON.stringify(objSuccess);
-        fs.writeFile('successDB.json', `${outputObjSuccess}`, function (err) {
-            if (err)
-                console.log(err);
-            //else
-            //console.log('Write operation complete.');
-        });*/
-        //console.log('successDB -> ')
-        //console.log(successDB);
-
-
-
-        //console.log(objInfo['mainText'])
-        //pageInfoDB.push(objInfo)
-        bulkBody.push(objInfo)
-
+        bulkBody.push(objInfo);
         //storePageInfo(objInfo)
-
     })
-
 }
 
 async function storePageInfo(objInfo) {
@@ -342,31 +232,109 @@ async function storePageInfo(objInfo) {
 }
 
 async function storeDB(link, seenDBTable) {
-    jsonlink = JSON.stringify(link);
-    jsontable = JSON.stringify(seenDBTable);
-    /*await client.update({
-        index: 'udb',
-        id: '1',
-        body: {
-            doc: {
+    // this link URL number < 100
+    if (link.length < 200) {
+        const {
+            body
+        } = await client.get({
+            index: 'udb',
+            id: '1'
+        })
+        let parselink = JSON.parse(body._source.link);
+        for (let i = 0; i < 200 && parselink.length > 0; i++) {
+            link.push(parselink[0]);
+            parselink.shift();
+        }
+        let stringlink = JSON.stringify(parselink);
+        await client.update({
+            index: 'udb',
+            id: '1',
+            body: {
+                doc: {
+                    link: `${stringlink}`,
+                }
+            }
+        })
+        let jsontable = JSON.stringify(seenDBTable);
+        await client.index({
+            index: 'seenhashtable',
+            id: '1',
+            body: {
+                table: `${jsontable}`,
+            }
+        })
+    }
+    // this URL number > 5000
+    // push URL after 100 back into UDB index
+    else if (link.length > 10000) {
+        console.log('push URL back to UDB')
+        const {
+            body
+        } = await client.get({
+            index: 'udb',
+            id: '1'
+        })
+        let parselink = JSON.parse(body._source.link);
+
+        console.log(link);
+
+        let templink = link.slice(199);
+        link.splice(200);
+        console.log('push link');
+
+        console.log(link);
+        console.log(link.length);
+
+        Array.prototype.push.apply(parselink, templink);
+
+        let stringlink = JSON.stringify(parselink);
+        await client.update({
+            index: 'udb',
+            id: '1',
+            body: {
+                doc: {
+                    link: `${stringlink}`,
+                }
+            }
+        })
+        let jsontable = JSON.stringify(seenDBTable);
+        await client.index({
+            index: 'seenhashtable',
+            id: '1',
+            body: {
+                table: `${jsontable}`,
+            }
+        })
+    }
+    // this URL > 100 && URL < 5000
+    /*
+    else {
+        jsonlink = JSON.stringify(link);
+        jsontable = JSON.stringify(seenDBTable);
+        await client.update({
+            index: 'udb',
+            id: '1',
+            body: {
+                doc: {
+                    link: `${jsonlink}`,
+                }
+            }
+        })
+        await client.index({
+            index: 'udb',
+            id: '1',
+            body: {
                 link: `${jsonlink}`,
             }
-        }
-    })*/
-    await client.index({
-        index: 'udb',
-        id: '1',
-        body: {
-            link: `${jsonlink}`,
-        }
-    })
-    await client.index({
-        index: 'seenhashtable',
-        id: '1',
-        body: {
-            table: `${jsontable}`,
-        }
-    })
+        })
+        await client.index({
+            index: 'seenhashtable',
+            id: '1',
+            body: {
+                table: `${jsontable}`,
+            }
+        })
+    }*/
 }
 
 
@@ -415,12 +383,74 @@ async function storePageInfoBulk(bulkBody) {
 }
 
 
+// initialization when restart
+async function initialization(link, seenDBTable) {
+    await getlink(link);
+    await getseenTable(seenDBTable)
+    return link, seenDBTable;
+}
+
+async function getlink(link) {
+    const {
+        body
+    } = await client.get({
+        index: 'udb',
+        id: '1'
+    })
+    let parselink = JSON.parse(body._source.link);
+    if (!isNaN(parselink[0])) {
+        parselink.shift();
+    }
+    for (let i = 0; i < 100 && parselink.length > 0; i++) {
+        link[i] = parselink[0];
+        parselink.shift();
+    }
+
+    //link = parselink;
+    console.log(link)
+    console.log(parselink)
+
+
+    let stringlink = JSON.stringify(parselink);
+    await client.update({
+        index: 'udb',
+        id: '1',
+        body: {
+            doc: {
+                link: `${stringlink}`,
+            }
+        }
+    })
+    //console.log(link)
+    return new Promise(resolve => {
+        setTimeout(() => {
+            resolve(link);
+        }, 0);
+    });
+}
+async function getseenTable(seenDBTable) {
+    const {
+        body
+    } = await client.get({
+        index: 'seenhashtable',
+        id: '1'
+    })
+    parsetable = JSON.parse(body._source.table);
+    seenDBTable = parsetable;
+    //console.log(seenDBTable)
+
+    return new Promise(resolve => {
+        setTimeout(() => {
+            resolve(seenDBTable);
+        }, 0);
+    });
+}
+
+
 // Search api
 async function onSearch(req, res) {
     //console.log('onSearch');
-
     const searchInput = req.body.searchInput;
-
     // Let's search!
     const {
         body
@@ -493,65 +523,6 @@ async function updateHistoryInfo(req, res) {
 }
 app.get('/api/updateHistoryInfo', updateHistoryInfo);
 
-// initialization when restart
-async function initialization(link, seenDBTable) {
-    await getlink(link);
-    await getseenTable(seenDBTable)
-    return link, seenDBTable;
-}
-async function getlink(link) {
-    const {
-        body
-    } = await client.get({
-        index: 'udb',
-        id: '1'
-    })
-    parselink = JSON.parse(body._source.link);
-    for (let i = 0; i < 100 && parselink.length > 0; i++) {
-        link[i] = parselink[0];
-        parselink.shift();
-    }
-    //link = parselink;
-    console.log(link)
-    console.log(parselink)
-
-
-    stringlink = JSON.stringify(parselink);
-    await client.update({
-        index: 'udb',
-        id: '1',
-
-        body: {
-            doc: {
-                link: `${stringlink}`,
-            }
-        }
-    })
-    console.log(link)
-    return new Promise(resolve => {
-        setTimeout(() => {
-            resolve(link);
-        }, 0);
-    });
-}
-async function getseenTable(seenDBTable) {
-    const {
-        body
-    } = await client.get({
-        index: 'seenhashtable',
-        id: '1'
-    })
-    parsetable = JSON.parse(body._source.table);
-    seenDBTable = parsetable;
-    console.log(seenDBTable)
-
-    return new Promise(resolve => {
-        setTimeout(() => {
-            resolve(seenDBTable);
-        }, 0);
-    });
-}
-
 // Reset index api
 async function resetIndex(req, res) {
 
@@ -612,6 +583,191 @@ async function resetIndex(req, res) {
     res.json('reset succeed');
 }
 app.get('/api/resetIndex', resetIndex);
+
+
+// getDatatable api
+async function getDatatable(req, res) {
+    console.log('getdatatable')
+    const response = await client.search({
+        index: 'pageinfo',
+        // keep the search results "scrollable" for 30 seconds
+        //scroll: '30s',
+        // for the sake of this example, we will get only one result per search
+        size: 10000,
+        // filter the source to only include the quote field
+        _source: ['hostURL','ip','domain'],
+        body: {
+            query: {
+                match_all: {}
+            }
+        }
+    })
+    console.log(response.body.hits.hits);
+    let tablebody = [];
+    let hostarray = [];
+    for(let i=0;i<response.body.hits.hits.length;i++) {
+        if(hostarray.includes(response.body.hits.hits[i]._source.hostURL)) {
+            //tablebody[`${response.body.hits.hits[i]._source.hostURL}`].count++;
+            for(let j=0;j<tablebody.length;j++){
+                if(tablebody[j].hostURL == response.body.hits.hits[i]._source.hostURL) {
+                    tablebody[j].count++;
+                    if(!tablebody[j].ip.includes(`${response.body.hits.hits[i]._source.ip}`)) {
+                        tablebody[j].ip.push(`${response.body.hits.hits[i]._source.ip}`);
+                        tablebody[j].ipcount=tablebody[j].ip.length;
+                    }
+                    if(response.body.hits.hits[j]._source.domain) {
+                        if(!tablebody[j].domain.includes(`${response.body.hits.hits[i]._source.domain}`)) {
+                            tablebody[j].domain.push(`${response.body.hits.hits[i]._source.domain}`);
+                            tablebody[j].domaincount=tablebody[j].domain.length;
+                        }
+                    }
+
+                }
+            }
+            //if(!tablebody[`${response.body.hits.hits[i]._source.hostURL}`].ip.includes(`${response.body.hits.hits[i]._source.ip}`)) {
+            //    tablebody[`${response.body.hits.hits[i]._source.hostURL}`].ip.push(`${response.body.hits.hits[i]._source.ip}`);
+            //}
+        }
+        else {
+            let tempdomain = []
+            hostarray.push(response.body.hits.hits[i]._source.hostURL)
+            if(response.body.hits.hits[i]._source.domain) {
+                tempdomain.push(response.body.hits.hits[i]._source.domain);
+            }
+            tablebody.push({
+                hostURL:`${response.body.hits.hits[i]._source.hostURL}`,
+                count: 1,
+                ipcount: 1,
+                ip: [`${response.body.hits.hits[i]._source.ip}`],
+                domaincount: 0,
+                domain: tempdomain
+            })
+            //tablebody[`${response.body.hits.hits[i]._source.hostURL}`] = {};
+            //tablebody[`${response.body.hits.hits[i]._source.hostURL}`].count = 1;
+            //tablebody[`${response.body.hits.hits[i]._source.hostURL}`].ip = [`${response.body.hits.hits[i]._source.ip}`];
+
+        }
+    }
+
+    //console.log(hostarray);
+    //console.log(hostarray.length);
+    console.log(tablebody);
+
+    /*
+    const {
+        body
+    } = await client.get({
+        index: 'pageinfo',
+        id: '1'
+    })
+    parselink = JSON.parse(body._source.link);
+    const {
+        body: count
+    } = await client.count({
+        index: 'pageinfo'
+    })
+    console.log(count)
+    let resbody = {
+        seenDBTable: seenDBTable, //need modify
+        successDB: count.count,
+        link: parselink,
+        timeSpanTotal: timeSpanTotal, //need modify
+        failDB: failDB //need modify
+    };*/
+
+    let resbody = {
+        tablebody: tablebody
+    }
+    //await delay(3000)
+
+    console.log('res')
+    //console.log(tablebody)
+    //console.log(resbody)
+    //console.log(resbody.tablebody)
+
+    //TODO: fix res json is empty
+    res.json(resbody);
+
+}
+app.get('/api/getDatatable', getDatatable);
+
+async function outputFile() {
+    /*
+    let outputInfoDB = JSON.stringify(pageInfoDB);
+    fs.writeFile(`./pageInfoDB.json`, `${outputInfoDB}`, function (err) {
+        if (err)
+            console.log(err);
+        else
+            console.log('Write operation complete.');
+    });*/
+
+    /*
+    fs.writeFile('udb.txt', `${link}`, function (err) {
+        if (err)
+            console.log(err);
+        //else
+        //console.log('Write operation complete.');
+    });
+    
+            fs.writeFile('linkmd5.txt', `${linkmd5}`, function (err) {
+                if (err)
+                    console.log(err);
+                //else
+                //console.log('Write operation complete.');
+            });*/
+
+    /* seenDBTable
+    var obj = {
+        table: seenDBTable
+    };
+    let outputObj = JSON.stringify(obj);
+    fs.writeFile('seenhashTable.json', `${outputObj}`, function (err) {
+        if (err)
+            console.log(err);
+        //else
+        //console.log('Write operation complete.');
+    });*/
+
+
+    /*
+    fs.writeFile('text.txt', `${text}`, function (err) {
+        if (err)
+            console.log(err);
+        //else
+        //console.log('Write operation complete.');
+    });
+    fs.writeFile('body.txt', `${body}`, function (err) {
+        if (err)
+            console.log(err);
+        //else
+        //console.log('Write operation complete.');
+    });*/
+
+    /*
+    // InfoDB output
+    setTimeout(() => {
+        console.log('wait 5s');
+        let outputObjInfo = JSON.stringify(objInfo);
+        fs.writeFile(`./InfoDB/${md5(myURL)}.json`, `${outputObjInfo}`, function (err) {
+            if (err)
+                console.log(err);
+            else
+                console.log('Write operation complete.');
+        });
+    }, 3000);*/
+
+    /*objSuccess['successURL'] = successDB;
+        let outputObjSuccess = JSON.stringify(objSuccess);
+        fs.writeFile('successDB.json', `${outputObjSuccess}`, function (err) {
+            if (err)
+                console.log(err);
+            //else
+            //console.log('Write operation complete.');
+        });*/
+    //console.log('successDB -> ')
+    //console.log(successDB);
+
+}
 
 
 const port = process.env.PORT || 3000;
