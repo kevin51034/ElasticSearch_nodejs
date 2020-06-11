@@ -7,7 +7,7 @@ function djb2HashCode(value) {
         hash = hash * 33 + value.charCodeAt(i);
     }
     // 1013 為隨機質數
-    return hash % 16127;
+    return hash % 1046527;
 }
 
 function put(value, table) {

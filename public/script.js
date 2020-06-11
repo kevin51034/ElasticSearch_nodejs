@@ -28,21 +28,25 @@ async function onSearch() {
 }
 
 function showResult(resultJson, searchInputValue) {
+    let result = resultJson.searchResult
+    console.log(result);
+    console.log(resultJson.searchSimilar);
     let resultList = document.querySelector('#searchResult');
     let resultListDiv = document.querySelector('#searchResultDiv');
 
         resultList.innerHTML = '';
         resultListDiv.innerHTML = '';
 
-    for(let i=0;i<resultJson.length;i++){
-        if(!resultJson[i]._source.siteURL)
+    for(let i=0;i<result.length;i++){
+        if(!result[i]._source.siteURL)
             continue;
-        if(resultJson[i++]._source.siteURL) {
-            if(resultJson[i++]._source.siteURL == resultJson[i]._source.siteURL) {
-                resultJson.shift();
+        if(i<result.length-1){
+            if(result[i++]._source.siteURL) {
+                if(result[i++]._source.siteURL == result[i]._source.siteURL) {
+                    result.shift();
+                }
             }
         }
-
 
         //var linode = document.createElement('li');                 // Create a <li> node
         //var anode = document.createElement('a'); //create a <a> tag
@@ -65,7 +69,7 @@ function showResult(resultJson, searchInputValue) {
         hnode.classList.add('mb-1')
         pnode.classList.add('mb-1')
 
-        titletext = `${resultJson[i]._source.pageTitle}`
+        let titletext = `${result[i]._source.pageTitle}`
 
         var titleIndex = titletext.indexOf(searchInputValue);
 
@@ -79,8 +83,8 @@ function showResult(resultJson, searchInputValue) {
 
 
         anode.appendChild(divnode);
-        anode.href = `${resultJson[i]._source.siteURL}`;
-        displaytext = `${resultJson[i]._source.mainText}`;
+        anode.href = `${result[i]._source.siteURL}`;
+        displaytext = `${result[i]._source.mainText}`;
 
 
         //let searchInputValueSplit = searchInputValue.split(' ');

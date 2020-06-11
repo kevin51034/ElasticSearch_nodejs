@@ -204,6 +204,6 @@ const updateTableButton = document.querySelector('#updateTableButton');
 updateTableButton.addEventListener('click', updateTable);
 
 
-setInterval(updateInfo, 1000 * 5);
+setInterval(updateInfo, 1000 * 10 * 6);
 
 setInterval(updateHistoryInfo, 1000 * 60 * 5);

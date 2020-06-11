@@ -8,6 +8,7 @@ const rp = require('request-promise');
 
 var HashTable = require('./hashtable.js');
 var moment = require('moment');
+var w2v = require( 'word2vec' );
 
 //Elastic Search
 
@@ -49,10 +50,17 @@ const delay = t => { // wait function
         setTimeout(resolve, t);
     });
 };
+var modelglobal;
+w2v.loadModel( './word2vec/vectors4.txt', function( error, model ) {
+    console.log('model load succeed')
+    console.log( model );
+    modelglobal = model;
+});
 
 async function main() {
-    await delay(3000);
 
+    await delay(30000);
+    console.log(modelglobal);
     // initialization
     //initialization(link, seenDBTable);
     await getlink(link);
@@ -60,13 +68,13 @@ async function main() {
 
     await delay(3000);
     //console.log(link);
-    //console.log(seenDBTable);
+    console.log(seenDBTable);
 
     var startTime = moment().format();
     console.log(startTime);
-    batchCrawler();
+    /*batchCrawler();
 
-    console.log(link);
+    //console.log(link);
     console.log('success URL number: ' + successDB.length);
     for (let i = 0; i < 100; i++) {
         var timeSpan = moment();
@@ -77,9 +85,7 @@ async function main() {
         await delay(5000);
 
         console.log('success URL number: ' + successDB.length);
-        /*await client.indices.refresh({
-            index: 'pageinfo'
-        })*/
+
         var batchTime = moment().format();
         console.log('batch time : ')
         console.log(batchTime)
@@ -90,13 +96,13 @@ async function main() {
             storePageInfoBulk(bulkBody);
             bulkBody = [];
             storeDB(link, seenDBTable);
-
+            updateFailDB(failDB);
         }
 
         await delay(5000);
 
     }
-    console.log(crawlercount);
+    console.log(crawlercount);*/
     //batchCrawler();
 }
 //main();
@@ -107,6 +113,9 @@ async function batchCrawler() {
     for (let count = 0; link.length > 0 && count < 150; count++) {
         crawlercount++;
         if (link[count]) {
+            if(!isNaN(link[0])) {
+                link.shift();
+            }
             let url = link[0];
             let depth = ++link[1];
             link.shift();
@@ -202,9 +211,12 @@ async function dorequest(url, depth) {
             objInfo['mainText'] = text;
         } else {
             // select all text
-            let text = [];
+            let text = '';
             $('div').map(function (i, elem) {
-                text.push($(this).text().replace(/^\s+|\s+$/gm, ''));
+                if ($(this).text().length > text.length) {
+                    text = '';
+                    text = $(this).text().replace(/^\s+|\s+$/gm, '');
+                }
             })
             objInfo['mainText'] = text;
         }
@@ -246,6 +258,7 @@ async function storeDB(link, seenDBTable) {
             parselink.shift();
         }
         let stringlink = JSON.stringify(parselink);
+
         await client.update({
             index: 'udb',
             id: '1',
@@ -256,11 +269,13 @@ async function storeDB(link, seenDBTable) {
             }
         })
         let jsontable = JSON.stringify(seenDBTable);
-        await client.index({
+        await client.update({
             index: 'seenhashtable',
             id: '1',
             body: {
-                table: `${jsontable}`,
+                doc: {
+                    table: `${jsontable}`,
+                }
             }
         })
     }
@@ -275,16 +290,8 @@ async function storeDB(link, seenDBTable) {
             id: '1'
         })
         let parselink = JSON.parse(body._source.link);
-
-        console.log(link);
-
         let templink = link.slice(199);
         link.splice(200);
-        console.log('push link');
-
-        console.log(link);
-        console.log(link.length);
-
         Array.prototype.push.apply(parselink, templink);
 
         let stringlink = JSON.stringify(parselink);
@@ -298,11 +305,13 @@ async function storeDB(link, seenDBTable) {
             }
         })
         let jsontable = JSON.stringify(seenDBTable);
-        await client.index({
+        await client.update({
             index: 'seenhashtable',
             id: '1',
             body: {
-                table: `${jsontable}`,
+                doc: {
+                    table: `${jsontable}`,
+                }
             }
         })
     }
@@ -336,6 +345,30 @@ async function storeDB(link, seenDBTable) {
         })
     }*/
 }
+
+async function updateFailDB(failDB) {
+
+        const {
+            body
+        } = await client.get({
+            index: 'faildb',
+            id: '1'
+        })
+        let parsefailDB = JSON.parse(body._source.failURL);
+        Array.prototype.push.apply(parsefailDB, failDB);
+        let stringFailDB = JSON.stringify(parsefailDB);
+
+        await client.update({
+            index: 'faildb',
+            id: '1',
+            body: {
+                doc: {
+                    failURL: `${stringFailDB}`,
+                }
+            }
+        })
+}
+
 
 
 async function storePageInfoBulk(bulkBody) {
@@ -373,7 +406,9 @@ async function storePageInfoBulk(bulkBody) {
         })
         console.log(erroredDocuments)
     }
-
+    await client.indices.refresh({
+            index: 'pageinfo'
+    })
     const {
         body: count
     } = await client.count({
@@ -405,12 +440,6 @@ async function getlink(link) {
         link[i] = parselink[0];
         parselink.shift();
     }
-
-    //link = parselink;
-    console.log(link)
-    console.log(parselink)
-
-
     let stringlink = JSON.stringify(parselink);
     await client.update({
         index: 'udb',
@@ -437,7 +466,7 @@ async function getseenTable(seenDBTable) {
     })
     parsetable = JSON.parse(body._source.table);
     seenDBTable = parsetable;
-    //console.log(seenDBTable)
+    console.log(seenDBTable)
 
     return new Promise(resolve => {
         setTimeout(() => {
@@ -449,9 +478,14 @@ async function getseenTable(seenDBTable) {
 
 // Search api
 async function onSearch(req, res) {
+
+    //model.similarity( 'ham', 'cheese' );
+
     //console.log('onSearch');
     const searchInput = req.body.searchInput;
     // Let's search!
+    let searchSimilar = modelglobal.mostSimilar(`${searchInput}`,10);
+
     const {
         body
     } = await client.search({
@@ -478,14 +512,16 @@ async function onSearch(req, res) {
             //console.log(body.hits.hits[i]._source.text)
         }
     }
-    res.json(body.hits.hits);
+    res.json(resbody = {
+        searchResult: body.hits.hits,
+        searchSimilar: searchSimilar
+    });
     //res = body.hits.hits;
 }
 app.post('/api/search', onSearch);
 
 // UpdateInfo api
 async function updateInfo(req, res) {
-
     let body = {
         seenDBTable: seenDBTable,
         successDB: successDB,
@@ -580,6 +616,14 @@ async function resetIndex(req, res) {
             table: inittable
         }
     })
+    initfailDB = JSON.stringify(failDB);
+    await client.index({
+        index: 'faildb',
+        id: '1',
+        body: {
+            failURL: initfailDB
+        }
+    })
     res.json('reset succeed');
 }
 app.get('/api/resetIndex', resetIndex);
@@ -651,7 +695,7 @@ async function getDatatable(req, res) {
 
     //console.log(hostarray);
     //console.log(hostarray.length);
-    console.log(tablebody);
+    //console.log(tablebody);
 
     /*
     const {
