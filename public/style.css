@@ -18,6 +18,10 @@ body {
     width: 80%;
 }
 
+.badge {
+    margin: 0.5%;
+}
+
 .hidden {
     display: none;
 }

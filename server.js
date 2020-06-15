@@ -72,7 +72,7 @@ async function main() {
 
     var startTime = moment().format();
     console.log(startTime);
-    /*batchCrawler();
+    batchCrawler();
 
     //console.log(link);
     console.log('success URL number: ' + successDB.length);
@@ -102,7 +102,7 @@ async function main() {
         await delay(5000);
 
     }
-    console.log(crawlercount);*/
+    console.log(crawlercount);
     //batchCrawler();
 }
 //main();
