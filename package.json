@@ -10,7 +10,7 @@
     "express": "^4.17.1",
     "express-session": "^1.17.0",
     "md5": "^2.2.1",
-    "moment": "^2.24.0",
+    "moment": "^2.29.4",
     "mongoose": "^5.9.3",
     "nodemon": "^2.0.2",
     "request": "^2.88.2",
